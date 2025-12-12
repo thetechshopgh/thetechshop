@@ -5,6 +5,7 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.js", "**/*.jsx"],
+ 
+  "include": ["**/*.js", "**/*.jsx"], 
   "exclude": ["node_modules"]
 }
