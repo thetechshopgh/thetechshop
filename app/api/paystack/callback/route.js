@@ -13,7 +13,7 @@ export async function GET(req) {
   const reference = searchParams.get('reference');
 
   if (!reference) {
-     return NextResponse.redirect(new URL('/?error=no_reference', req.url));
+     return NextResponse.redirect(new URL(`/thank-you?reference=${reference}`, req.url));
   }
 
   // 1. Verify Transaction with Paystack
