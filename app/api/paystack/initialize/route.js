@@ -12,7 +12,7 @@ export async function POST(req) {
     body: JSON.stringify({ 
       email, 
       amount: amount * 100, // Convert to kobo
-      callback_url: `${process.env.NEXT_PUBLIC_URL || https://thetechshop.vercel.app/}/api/paystack/callback`,
+      callback_url: `${process.env.NEXT_PUBLIC_URL || 'https://thetechshop.vercel.app/'}/api/paystack/callback`,
       metadata: { productId }
     }),
   });
