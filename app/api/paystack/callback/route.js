@@ -5,6 +5,9 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Define your Admin Email here:
+const ADMIN_EMAIL = 'thetechshopgh@gmail.com'; 
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const reference = searchParams.get('reference');
@@ -22,63 +25,80 @@ export async function GET(req) {
   if (verifyData.data && verifyData.data.status === 'success') {
     const { customer, amount, metadata } = verifyData.data;
 
-    // 🛑 Extract delivery and order details from metadata
+    // Extract details
     const { 
         fullName, 
         phoneNumber, 
         digitalAddress, 
         deliveryAddress,
-        cartItems // Array of purchased items
+        cartItems 
     } = metadata;
+    const totalAmount = (amount/100).toFixed(2);
 
     // 2. Save Order to Supabase
-    // NOTE: This inserts ONE order record with delivery details.
-    // If you need per-item tracking, you would iterate over cartItems and insert into a separate 'order_items' table.
-    
-    // For this implementation, we save the full cart array as JSON/TEXT for the admin to view.
     const { error: dbError } = await supabase.from('orders').insert({
       customer_email: customer.email,
-      amount: amount / 100,
+      amount: totalAmount,
       reference: reference,
       status: 'paid',
       full_name: fullName,
       phone_number: phoneNumber,
       digital_address: digitalAddress,
-      // Store the entire cart JSON for order processing
       delivery_address: deliveryAddress, 
       order_items_json: JSON.stringify(cartItems), 
     });
     
     if (dbError) {
-        console.error("Supabase Error:", dbError);
-        // Still redirect to success, but log the DB issue
+        console.error("Supabase DB Save Error:", dbError);
     }
 
-    // 3. Send Email Notifications
-    await resend.emails.send({
-      from: 'Orders <onboarding@resend.dev>',
-      to: [customer.email, 'your-admin-email@gmail.com'], // Send to Admin too!
-      subject: `NEW ORDER #${reference} - PAID`,
-      html: `
-        <h2 style="color: #6366f1;">Thank you for your order!</h2>
-        <p>Your payment of ₵${(amount/100).toFixed(2)} has been successfully processed.</p>
-        
-        <h3>Items Ordered:</h3>
-        <ul>
-            ${cartItems.map(item => `<li>${item.name} (x${item.quantity}) @ ₵${item.price} each</li>`).join('')}
-        </ul>
+    // --- 3. Construct Email Content ---
+    
+    // Items List for Email HTML
+    const itemsHtml = cartItems.map(item => 
+      `<li>${item.name} (x${item.quantity}) - Price: ₵${item.price.toFixed(2)}</li>`
+    ).join('');
 
-        <h3>Delivery Details:</h3>
-        <p><strong>Name:</strong> ${fullName}</p>
-        <p><strong>Phone:</strong> ${phoneNumber}</p>
-        <p><strong>Digital Address:</strong> ${digitalAddress}</p>
-        <p><strong>Physical Address:</strong> ${deliveryAddress}</p>
-        <p>Reference: ${reference}</p>
-      `
+    const emailHtml = `
+      <h2 style="color: #10b981;">New Order Alert: #${reference}</h2>
+      <p>A new payment of ₵${totalAmount} has been successfully received.</p>
+      
+      <h3>Customer & Delivery Details:</h3>
+      <ul style="list-style-type: none; padding: 0;">
+          <li><strong>Customer Name:</strong> ${fullName}</li>
+          <li><strong>Email:</strong> ${customer.email}</li>
+          <li><strong>Phone:</strong> ${phoneNumber}</li>
+          <li><strong>Digital Address:</strong> ${digitalAddress}</li>
+          <li><strong>Physical Address:</strong> ${deliveryAddress}</li>
+          <li><strong>Transaction Ref:</strong> ${reference}</li>
+      </ul>
+
+      <h3>Items Ordered:</h3>
+      <ul style="padding-left: 20px;">
+          ${itemsHtml}
+      </ul>
+      <h3 style="color: #0f172a;">Total Paid: ₵${totalAmount}</h3>
+    `;
+
+    // 4. Send Email Notifications
+    // Send to Customer (Receipt)
+    await resend.emails.send({
+      from: 'Store <onboarding@resend.dev>',
+      to: [customer.email],
+      subject: `Your Order Confirmation #${reference}`,
+      html: emailHtml.replace('New Order Alert:', 'Your Order Confirmation:'), // Customize subject/heading for customer
     });
     
-    // 4. Redirect user and clear cart (implicitly handled by app state on success page if you clear it there)
-    return NextResponse.redirect(new URL('/?success=true', req.url));
+    // Send to Admin (Notification)
+    await resend.emails.send({
+      from: 'Store <onboarding@resend.dev>',
+      to: [ADMIN_EMAIL], // 🛑 YOUR ADMIN EMAIL HERE
+      subject: `NEW ORDER RECEIVED: #${reference} - ₵${totalAmount}`,
+      html: emailHtml,
+    });
+    
+    // 5. Redirect user to the new Thank You Page
+    return NextResponse.redirect(new URL(`/thank-you?reference=${reference}`, req.url));
   }
 
   // Payment Failed
