@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev"
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -16,8 +16,6 @@
     "react": "^18",
     "react-dom": "^18",
     "resend": "^2.0.0"
-    
-    // js-cookie is not needed since we moved away from local auth tokens.
   },
   "devDependencies": {
     "autoprefixer": "^10.0.1",
