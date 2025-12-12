@@ -1,4 +1,6 @@
-import './globals.css'; // Import global CSS here
+// app/layout.js (UPDATED)
+import './globals.css';
+import { CartProvider } from '../components/CartContext'; // Adjust path as needed
 
 // Metadata is optional but good practice
 export const metadata = {
@@ -6,14 +8,14 @@ export const metadata = {
   description: 'Premium gadgets for the modern creator.',
 };
 
-// The Root Layout Component
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      {/* The body tag wraps your entire application */}
       <body>
-        {/* The 'children' prop is where all your pages and nested layouts will be rendered */}
-        {children}
+        {/* WRAP CHILDREN IN THE CART PROVIDER */}
+        <CartProvider> 
+            {children}
+        </CartProvider>
       </body>
     </html>
   );
