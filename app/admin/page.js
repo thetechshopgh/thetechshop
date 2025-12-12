@@ -1,123 +1,159 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Loader2, UploadCloud } from 'lucide-react'
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
   
-  // Product Form State
+  // Form State
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [desc, setDesc] = useState('')
   const [image, setImage] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null) // To show image before upload
   const [uploading, setUploading] = useState(false)
 
-  const checkAuth = () => {
-    // Ideally use server-side verification, but this works for simple client-side gating
-    // Note: You must actually protect the API routes for real security
-    fetch('/api/auth/check', { 
+  // Simple Password Check
+  const checkAuth = async () => {
+    const res = await fetch('/api/auth/check', { 
         method: 'POST', 
         body: JSON.stringify({ password }) 
-    }).then(res => {
-        if(res.ok) setIsAuthenticated(true)
-        else alert('Wrong Password')
     })
+    if(res.ok) setIsAuthenticated(true)
+    else alert('Invalid Admin Password')
+  }
+
+  // Handle File Selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setImage(file)
+      setPreviewUrl(URL.createObjectURL(file)) // Create local preview
+    }
   }
 
   const handleAddProduct = async (e) => {
     e.preventDefault()
     setUploading(true)
 
-    // 1. Upload Image
-    let imageUrl = ''
-    if (image) {
-      const fileName = `${Date.now()}-${image.name}`
-      const { data, error } = await supabase.storage.from('products').upload(fileName, image)
-      if (data) {
-        // Get Public URL
-        const { data: urlData } = supabase.storage.from('products').getPublicUrl(fileName)
-        imageUrl = urlData.publicUrl
+    try {
+      let finalImageUrl = ''
+      
+      // 1. Upload to Supabase Storage
+      if (image) {
+        const fileExt = image.name.split('.').pop()
+        const fileName = `${Date.now()}.${fileExt}`
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(fileName, image)
+
+        if (uploadError) throw uploadError
+
+        // 2. Get the Public URL
+        const { data } = supabase.storage
+          .from('products')
+          .getPublicUrl(fileName)
+          
+        finalImageUrl = data.publicUrl
       }
-    }
 
-    // 2. Insert to DB
-    const { error } = await supabase.from('products').insert({
-      name,
-      description: desc,
-      price,
-      image_url: imageUrl
-    })
+      // 3. Save to Database
+      const { error: dbError } = await supabase.from('products').insert({
+        name,
+        description: desc,
+        price,
+        image_url: finalImageUrl
+      })
 
-    setUploading(false)
-    if (!error) {
-      alert('Product Added!')
-      setName(''); setPrice(''); setDesc(''); setImage(null);
-    } else {
-      alert('Error adding product')
+      if (dbError) throw dbError
+
+      alert('Product added successfully!')
+      // Reset Form
+      setName(''); setPrice(''); setDesc(''); setImage(null); setPreviewUrl(null);
+    } catch (error) {
+      console.error(error)
+      alert('Error: ' + error.message)
+    } finally {
+      setUploading(false)
     }
   }
 
+  // Login Screen
   if (!isAuthenticated) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-          <h2 className="mb-6 text-2xl font-bold text-slate-900">Admin Access</h2>
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-lg">
+          <h2 className="mb-4 text-xl font-bold text-center">Admin Login</h2>
           <input 
             type="password" 
-            placeholder="Enter Admin PIN"
-            className="w-full rounded-lg border border-slate-200 p-3 outline-none focus:border-indigo-500"
+            placeholder="Admin Password"
+            className="w-full rounded-lg border p-3 mb-4"
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button onClick={checkAuth} className="btn-gradient mt-4 w-full rounded-lg py-3 font-bold text-white">Login</button>
+          <button onClick={checkAuth} className="w-full rounded-lg bg-black py-3 text-white font-bold hover:bg-gray-800">Enter Dashboard</button>
         </div>
       </div>
     )
   }
 
+  // Dashboard Screen
   return (
-    <div className="min-h-screen bg-slate-50 p-10">
-      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-10 shadow-xl">
-        <h1 className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-3xl font-extrabold text-transparent">
-          Add New Product
-        </h1>
-        <form onSubmit={handleAddProduct} className="mt-8 space-y-6">
-          <div>
-            <label className="mb-2 block font-semibold text-slate-700">Product Name</label>
-            <input 
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 outline-none focus:ring-2 focus:ring-indigo-500" 
-              value={name} onChange={e => setName(e.target.value)} required 
-            />
+    <div className="min-h-screen bg-gray-50 py-12 px-6">
+      <div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-xl md:p-12">
+        <div className="mb-10 text-center">
+          <h1 className="text-3xl font-bold text-slate-900">Add New Product</h1>
+          <p className="text-slate-500">Upload details for the storefront</p>
+        </div>
+
+        <form onSubmit={handleAddProduct} className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Product Name</label>
+              <input className="w-full rounded-xl border bg-gray-50 p-4 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. MacBook Pro" />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Price (GHS)</label>
+              <input type="number" className="w-full rounded-xl border bg-gray-50 p-4 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                value={price} onChange={e => setPrice(e.target.value)} required placeholder="0.00" />
+            </div>
           </div>
+
           <div>
-            <label className="mb-2 block font-semibold text-slate-700">Price (GHS)</label>
-            <input 
-              type="number"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 outline-none focus:ring-2 focus:ring-indigo-500" 
-              value={price} onChange={e => setPrice(e.target.value)} required 
-            />
+            <label className="mb-2 block text-sm font-semibold text-slate-700">Description</label>
+            <textarea className="w-full rounded-xl border bg-gray-50 p-4 focus:ring-2 focus:ring-indigo-500 outline-none" 
+              value={desc} onChange={e => setDesc(e.target.value)} rows={3} placeholder="Product details..." />
           </div>
+
+          {/* Image Upload Area */}
           <div>
-            <label className="mb-2 block font-semibold text-slate-700">Description</label>
-            <textarea 
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 outline-none focus:ring-2 focus:ring-indigo-500" 
-              value={desc} onChange={e => setDesc(e.target.value)} rows={3}
-            />
+            <label className="mb-2 block text-sm font-semibold text-slate-700">Product Image</label>
+            <div className="relative flex min-h-[150px] items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:bg-gray-100">
+              {previewUrl ? (
+                <img src={previewUrl} alt="Preview" className="max-h-[150px] rounded-lg object-contain" />
+              ) : (
+                <div className="text-center text-gray-400">
+                  <UploadCloud className="mx-auto mb-2 h-8 w-8" />
+                  <p>Click to upload image</p>
+                </div>
+              )}
+              <input 
+                type="file" 
+                accept="image/*"
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                onChange={handleImageChange}
+                required
+              />
+            </div>
           </div>
-          <div>
-            <label className="mb-2 block font-semibold text-slate-700">Product Image</label>
-            <input 
-              type="file" 
-              accept="image/*"
-              className="w-full rounded-xl border border-dashed border-slate-300 p-4 text-slate-500"
-              onChange={e => setImage(e.target.files[0])}
-            />
-          </div>
+
           <button 
             disabled={uploading}
-            className="btn-gradient w-full rounded-xl py-4 text-lg font-bold text-white shadow-lg disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-4 text-lg font-bold text-white shadow-lg transition-transform hover:scale-[1.02] disabled:opacity-70"
           >
-            {uploading ? 'Uploading...' : 'Publish Product'}
+            {uploading ? <Loader2 className="animate-spin" /> : 'Publish Product'}
           </button>
         </form>
       </div>
