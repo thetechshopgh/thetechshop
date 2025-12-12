@@ -1,10 +1,29 @@
-"dependencies": {
-  "@supabase/supabase-js": "^2.39.0",
-  "framer-motion": "^10.16.0",
-  "lucide-react": "^0.292.0",
-  "next": "14.0.3",
-  "react": "^18",
-  "react-dom": "^18",
-  "resend": "^2.0.0",
-  "js-cookie": "^3.0.5"
+{
+  "name": "tech-retail-store",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "framer-motion": "^10.16.0",
+    "lucide-react": "^0.292.0",
+    "next": "14.0.3",
+    "react": "^18",
+    "react-dom": "^18",
+    "resend": "^2.0.0"
+    
+    // js-cookie is not needed since we moved away from local auth tokens.
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.3",
+    "postcss": "^8",
+    "tailwindcss": "^3.3.0"
+  }
 }
