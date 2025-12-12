@@ -1,13 +1,17 @@
+// app/page.jsx
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { motion } from 'framer-motion' // smooth animations
+import { motion } from 'framer-motion'
 import { ShoppingBag, Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { useCart } from '@/components/CartContext'; // Import cart hook
+import CartDisplay from '@/components/CartDisplay'; // Import cart component
 
 export default function Store() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const { addToCart } = useCart(); // Use the hook
 
   useEffect(() => {
     fetchProducts()
@@ -19,28 +23,16 @@ export default function Store() {
     setLoading(false)
   }
 
-  const handleBuy = async (product) => {
-    const email = prompt("Please enter your email for the receipt:")
-    if (!email) return
-
-    // Show loading state here if needed
-    const res = await fetch('/api/paystack/initialize', {
-      method: 'POST',
-      body: JSON.stringify({ email, amount: product.price, productId: product.id }),
-    })
-    const data = await res.json()
-    if (data.authorization_url) {
-      window.location.href = data.authorization_url
-    }
-  }
-
   return (
     <div className="min-h-screen bg-[#FDFDFD]">
-      {/* Navbar */}
+      {/* Navbar - NOW INCLUDES CART */}
       <nav className="border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
           <div className="font-bold text-xl tracking-tighter text-slate-900">TECH<span className="text-indigo-600">RETAIL</span>.</div>
-          <button className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition">Contact Support</button>
+          <div className="flex items-center gap-4">
+            <button className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition">Contact Support</button>
+            <CartDisplay /> {/* THE NEW CART BUTTON */}
+          </div>
         </div>
       </nav>
 
@@ -88,7 +80,6 @@ export default function Store() {
                   ) : (
                     <div className="flex h-full items-center justify-center text-gray-400">No Image</div>
                   )}
-                  {/* Glossy Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
                 </div>
 
@@ -100,10 +91,10 @@ export default function Store() {
                   <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                     <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
                     <button 
-                      onClick={() => handleBuy(product)}
+                      onClick={() => addToCart(product)} // 🛑 CART LOGIC HERE
                       className="flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-600"
                     >
-                      Buy Now
+                      <ShoppingBag size={16} /> Add to Cart
                     </button>
                   </div>
                 </div>
