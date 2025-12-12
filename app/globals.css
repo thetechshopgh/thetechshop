@@ -1,19 +1,33 @@
+/* app/globals.css */
+
+/* 1. REQUIRED TAILWIND DIRECTIVES (MUST BE FIRST) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* 2. CUSTOM HIGH-END STYLING */
 body {
-  background: #f8fafc; /* Slate-50 */
-  color: #0f172a; /* Slate-900 */
+  /* Set a clean, slightly off-white background */
+  background: #FDFDFD; 
+  /* Set a modern, clean font color */
+  color: #1f2937; /* Slate-800 */
 }
 
-/* Colorful Gradient Button */
+/* Ensure all links and buttons use the custom gradient */
 .btn-gradient {
+  /* Colorful Gradient */
   background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
   transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
 }
 .btn-gradient:hover {
   filter: brightness(1.1);
   transform: translateY(-2px);
   box-shadow: 0 10px 20px -10px rgba(168, 85, 247, 0.5);
 }
+
+/* You may need to import the font if you want a non-system look */
+/* For a modern UI, consider using a font like Inter from Google Fonts
+   by adding this to layout.js instead of here.
+*/
