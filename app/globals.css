@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #f8fafc; /* Slate-50 */
+  color: #0f172a; /* Slate-900 */
+}
+
+/* Colorful Gradient Button */
+.btn-gradient {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  transition: all 0.3s ease;
+}
+.btn-gradient:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(168, 85, 247, 0.5);
+}
