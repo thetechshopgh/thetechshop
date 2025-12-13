@@ -1,162 +1,284 @@
+// app/admin/page.jsx (Comprehensive CRUD)
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Loader2, UploadCloud } from 'lucide-react'
+import { Loader2, Trash2, Edit2, X, AlertTriangle, PlusCircle } from 'lucide-react'
+import Image from 'next/image'
 
-export default function Admin() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [password, setPassword] = useState('')
-  
-  // Form State
-  const [name, setName] = useState('')
-  const [price, setPrice] = useState('')
-  const [desc, setDesc] = useState('')
-  const [image, setImage] = useState(null)
-  const [previewUrl, setPreviewUrl] = useState(null) // To show image before upload
-  const [uploading, setUploading] = useState(false)
+const initialProductState = {
+    name: '',
+    description: '',
+    detailed_description: '', // New field
+    price: 0,
+    image_url: '',
+    specs: {}, // New JSON field for specs
+};
 
-  // Simple Password Check
-  const checkAuth = async () => {
-    const res = await fetch('/api/auth/check', { 
-        method: 'POST', 
-        body: JSON.stringify({ password }) 
-    })
-    if(res.ok) setIsAuthenticated(true)
-    else alert('Invalid Admin Password')
-  }
+export default function AdminDashboard() {
+    const [products, setProducts] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [error, setError] = useState(null)
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentProduct, setCurrentProduct] = useState(initialProductState);
 
-  // Handle File Selection
-  const handleImageChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setImage(file)
-      setPreviewUrl(URL.createObjectURL(file)) // Create local preview
+    useEffect(() => {
+        fetchProducts()
+    }, [])
+
+    async function fetchProducts() {
+        setLoading(true)
+        const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+        setProducts(data || [])
+        setLoading(false)
     }
-  }
 
-  const handleAddProduct = async (e) => {
-    e.preventDefault()
-    setUploading(true)
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setCurrentProduct(prev => ({
+            ...prev,
+            [name]: name === 'price' ? parseFloat(value) || 0 : value,
+        }));
+    };
 
-    try {
-      let finalImageUrl = ''
-      
-      // 1. Upload to Supabase Storage
-      if (image) {
-        const fileExt = image.name.split('.').pop()
-        const fileName = `${Date.now()}.${fileExt}`
-        const { error: uploadError } = await supabase.storage
-          .from('products')
-          .upload(fileName, image)
+    const handleSpecsChange = (key, value) => {
+        setCurrentProduct(prev => ({
+            ...prev,
+            specs: {
+                ...prev.specs,
+                [key]: value,
+            }
+        }));
+    };
 
-        if (uploadError) throw uploadError
+    const handleSpecsDelete = (key) => {
+        const newSpecs = { ...currentProduct.specs };
+        delete newSpecs[key];
+        setCurrentProduct(prev => ({ ...prev, specs: newSpecs }));
+    };
 
-        // 2. Get the Public URL
-        const { data } = supabase.storage
-          .from('products')
-          .getPublicUrl(fileName)
-          
-        finalImageUrl = data.publicUrl
-      }
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setError(null);
 
-      // 3. Save to Database
-      const { error: dbError } = await supabase.from('products').insert({
-        name,
-        description: desc,
-        price,
-        image_url: finalImageUrl
-      })
+        // Prepare data for Supabase (convert specs object to JSON string if necessary, though Supabase handles JSONB)
+        const productToSave = {
+            ...currentProduct,
+            specs: currentProduct.specs,
+            // Ensure price is saved as a number
+            price: parseFloat(currentProduct.price),
+        };
 
-      if (dbError) throw dbError
+        let result;
+        if (isEditing && currentProduct.id) {
+            // EDIT/UPDATE LOGIC
+            result = await supabase
+                .from('products')
+                .update(productToSave)
+                .eq('id', currentProduct.id);
+        } else {
+            // CREATE LOGIC
+            result = await supabase
+                .from('products')
+                .insert([productToSave]);
+        }
 
-      alert('Product added successfully!')
-      // Reset Form
-      setName(''); setPrice(''); setDesc(''); setImage(null); setPreviewUrl(null);
-    } catch (error) {
-      console.error(error)
-      alert('Error: ' + error.message)
-    } finally {
-      setUploading(false)
-    }
-  }
+        if (result.error) {
+            setError(`Failed to save product: ${result.error.message}`);
+        } else {
+            await fetchProducts(); // Refresh list
+            setCurrentProduct(initialProductState);
+            setIsEditing(false);
+        }
+        setIsSubmitting(false);
+    };
 
-  // Login Screen
-  if (!isAuthenticated) {
+    const handleEdit = (product) => {
+        // Set product for editing, including merging specs if they are null
+        setCurrentProduct({ 
+            ...product,
+            specs: product.specs || {}
+        });
+        setIsEditing(true);
+    };
+
+    const handleDelete = async (id, name) => {
+        if (!window.confirm(`Are you sure you want to delete the product: "${name}"?`)) {
+            return;
+        }
+        setLoading(true);
+        const { error } = await supabase.from('products').delete().eq('id', id);
+
+        if (error) {
+            setError(`Failed to delete product: ${error.message}`);
+        } else {
+            await fetchProducts(); // Refresh list
+        }
+        setLoading(false);
+    };
+
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-lg">
-          <h2 className="mb-4 text-xl font-bold text-center">Admin Login</h2>
-          <input 
-            type="password" 
-            placeholder="Admin Password"
-            className="w-full rounded-lg border p-3 mb-4"
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button onClick={checkAuth} className="w-full rounded-lg bg-black py-3 text-white font-bold hover:bg-gray-800">Enter Dashboard</button>
-        </div>
-      </div>
-    )
-  }
+        <div className="mx-auto max-w-7xl px-6 py-12">
+            <h1 className="text-3xl font-extrabold text-slate-900 mb-8">Admin Dashboard</h1>
 
-  // Dashboard Screen
-  return (
-    <div className="min-h-screen bg-gray-50 py-12 px-6">
-      <div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-xl md:p-12">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold text-slate-900">Add New Product</h1>
-          <p className="text-slate-500">Upload details for the storefront</p>
-        </div>
-
-        <form onSubmit={handleAddProduct} className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">Product Name</label>
-              <input className="w-full rounded-xl border bg-gray-50 p-4 focus:ring-2 focus:ring-indigo-500 outline-none" 
-                value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. MacBook Pro" />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">Price (GHS)</label>
-              <input type="number" className="w-full rounded-xl border bg-gray-50 p-4 focus:ring-2 focus:ring-indigo-500 outline-none" 
-                value={price} onChange={e => setPrice(e.target.value)} required placeholder="0.00" />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">Description</label>
-            <textarea className="w-full rounded-xl border bg-gray-50 p-4 focus:ring-2 focus:ring-indigo-500 outline-none" 
-              value={desc} onChange={e => setDesc(e.target.value)} rows={3} placeholder="Product details..." />
-          </div>
-
-          {/* Image Upload Area */}
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">Product Image</label>
-            <div className="relative flex min-h-[150px] items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:bg-gray-100">
-              {previewUrl ? (
-                <img src={previewUrl} alt="Preview" className="max-h-[150px] rounded-lg object-contain" />
-              ) : (
-                <div className="text-center text-gray-400">
-                  <UploadCloud className="mx-auto mb-2 h-8 w-8" />
-                  <p>Click to upload image</p>
+            {/* Error Message */}
+            {error && (
+                <div className="p-4 bg-red-100 text-red-700 rounded-lg flex items-center mb-6">
+                    <AlertTriangle size={20} className="mr-2" /> {error}
                 </div>
-              )}
-              <input 
-                type="file" 
-                accept="image/*"
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                onChange={handleImageChange}
-                required
-              />
-            </div>
-          </div>
+            )}
 
-          <button 
-            disabled={uploading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-4 text-lg font-bold text-white shadow-lg transition-transform hover:scale-[1.02] disabled:opacity-70"
-          >
-            {uploading ? <Loader2 className="animate-spin" /> : 'Publish Product'}
-          </button>
-        </form>
-      </div>
-    </div>
-  )
+            {/* Product Form (Create & Edit) */}
+            <div className="bg-white p-8 rounded-2xl shadow-xl mb-12">
+                <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                    {isEditing ? 'Edit Product' : 'Add New Product'}
+                    {isEditing && (
+                        <button 
+                            onClick={() => { setIsEditing(false); setCurrentProduct(initialProductState); }}
+                            className="ml-4 text-sm text-red-500 hover:text-red-700 flex items-center gap-1"
+                        >
+                            <X size={16} /> Cancel Edit
+                        </button>
+                    )}
+                </h2>
+                
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Name */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Product Name</label>
+                            <input type="text" name="name" value={currentProduct.name} onChange={handleChange} required
+                                className="mt-1 w-full rounded-md border p-3 focus:ring-indigo-500" />
+                        </div>
+                        {/* Price */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Price (GHS ₵)</label>
+                            <input type="number" name="price" value={currentProduct.price} onChange={handleChange} required
+                                className="mt-1 w-full rounded-md border p-3 focus:ring-indigo-500" />
+                        </div>
+                    </div>
+
+                    {/* Image URL */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Image URL</label>
+                        <input type="url" name="image_url" value={currentProduct.image_url} onChange={handleChange}
+                            className="mt-1 w-full rounded-md border p-3 focus:ring-indigo-500" />
+                    </div>
+
+                    {/* Short Description */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Short Description (Used on Storefront)</label>
+                        <textarea name="description" value={currentProduct.description} onChange={handleChange} required rows="2"
+                            className="mt-1 w-full rounded-md border p-3 focus:ring-indigo-500"></textarea>
+                    </div>
+
+                    {/* Detailed Description */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Detailed Description (For Product Page)</label>
+                        <textarea name="detailed_description" value={currentProduct.detailed_description} onChange={handleChange} rows="5"
+                            className="mt-1 w-full rounded-md border p-3 focus:ring-indigo-500"></textarea>
+                    </div>
+
+                    {/* Specs Section */}
+                    <div className="border p-4 rounded-lg">
+                        <h3 className="text-lg font-bold text-gray-700 mb-3">Key Specifications</h3>
+                        <div className="space-y-3">
+                            {Object.entries(currentProduct.specs).map(([key, value]) => (
+                                <div key={key} className="flex gap-4 items-center">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Spec Name (e.g., 'RAM')" 
+                                        value={key} 
+                                        onChange={(e) => {
+                                            // Handle key change (must delete old key and add new one)
+                                            const newKey = e.target.value;
+                                            if (newKey) {
+                                                const newSpecs = { ...currentProduct.specs };
+                                                delete newSpecs[key];
+                                                newSpecs[newKey] = value;
+                                                setCurrentProduct(prev => ({ ...prev, specs: newSpecs }));
+                                            }
+                                        }}
+                                        className="w-1/3 rounded-md border p-2 text-sm"
+                                    />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Value (e.g., '16GB')" 
+                                        value={value} 
+                                        onChange={(e) => handleSpecsChange(key, e.target.value)}
+                                        className="w-2/3 rounded-md border p-2 text-sm"
+                                    />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleSpecsDelete(key)}
+                                        className="text-red-500 hover:text-red-700 transition"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                            {/* Button to add new spec */}
+                            <button 
+                                type="button" 
+                                onClick={() => handleSpecsChange(`New Spec ${Object.keys(currentProduct.specs).length + 1}`, '')}
+                                className="flex items-center text-indigo-600 hover:text-indigo-800 transition text-sm font-medium pt-2"
+                            >
+                                <PlusCircle size={16} className="mr-1" /> Add Specification
+                            </button>
+                        </div>
+                    </div>
+
+
+                    {/* Submit Button */}
+                    <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className="btn-gradient w-full py-3 rounded-lg text-white font-bold text-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : null}
+                        {isEditing ? 'Save Changes' : 'Add Product'}
+                    </button>
+                </form>
+            </div>
+
+            {/* Product List */}
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Current Products ({products.length})</h2>
+            <div className="space-y-4">
+                {loading ? (
+                    <div className="flex justify-center py-10"><Loader2 className="animate-spin text-indigo-600" size={30}/></div>
+                ) : (
+                    products.map(product => (
+                        <div key={product.id} className="bg-white p-4 rounded-xl shadow flex items-center justify-between transition-all hover:ring-2 hover:ring-indigo-100">
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-16 h-16 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
+                                    {product.image_url && <Image src={product.image_url} alt={product.name} fill className="object-cover" />}
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-slate-900">{product.name}</p>
+                                    <p className="text-sm text-slate-500">₵{product.price}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => handleEdit(product)}
+                                    className="p-2 text-indigo-600 hover:text-indigo-800 rounded-full hover:bg-indigo-50 transition"
+                                    title="Edit Product"
+                                >
+                                    <Edit2 size={20} />
+                                </button>
+                                <button 
+                                    onClick={() => handleDelete(product.id, product.name)}
+                                    className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50 transition"
+                                    title="Delete Product"
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
 }
