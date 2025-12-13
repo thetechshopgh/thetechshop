@@ -1,17 +1,16 @@
-// app/api/paystack/callback/route.js (FINAL, ROBUST VERSION)
+// app/api/paystack/callback/route.js
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const ADMIN_EMAIL = 'thetechshopgh@gmail.com'; // 🛑 REMEMBER TO CHANGE THIS!
+const ADMIN_EMAIL = 'YOUR_ADMIN_EMAIL@example.com'; // 🛑 REMEMBER TO CHANGE THIS TO YOUR EMAIL
 
 export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const reference = searchParams.get('reference');
 
     if (!reference) {
-        // Return 500 for Paystack to retry if no reference is provided unexpectedly
         return new NextResponse("Missing transaction reference", { status: 500 }); 
     }
 
@@ -25,21 +24,16 @@ export async function GET(req) {
         if (verifyData.data && verifyData.data.status === 'success') {
             const { customer, amount, metadata } = verifyData.data;
 
-            // Extract details
-            // app/api/paystack/callback/route.js (UPDATED CODE SNIPPET)
+            // Extract details with safety fallback
+            const { 
+                fullName, 
+                phoneNumber, 
+                digitalAddress, 
+                deliveryAddress,
+                cartItems = [] 
+            } = metadata;
 
-    // Extract details with safety fallback using the OR (||) operator
-    const { 
-        fullName, 
-        phoneNumber, 
-        digitalAddress, 
-        deliveryAddress,
-        cartItems = [] // 🛑 CRITICAL FIX: Default to an empty array if cartItems is missing
-    } = metadata;
-
-    const totalAmount = (amount/100).toFixed(2);
-    
-    // ... (The rest of the logic follows)
+            const totalAmount = (amount/100).toFixed(2);
             
             // --- 2. Save Order to Supabase ---
             const { error: dbError } = await supabase.from('orders').insert({
@@ -56,7 +50,6 @@ export async function GET(req) {
             
             if (dbError) {
                 console.error("Supabase DB Save Error:", dbError);
-                // Continue execution even if DB fails, to send emails and redirect user
             }
 
             // --- 3. Send Email Notifications ---
@@ -64,13 +57,25 @@ export async function GET(req) {
                 `<li>${item.name} (x${item.quantity}) - Price: ₵${item.price.toFixed(2)} each</li>`
             ).join('');
 
+            // 🛑 FIXED: The email HTML now explicitly includes the delivery variables
             const emailHtml = `
               <h2 style="color: #10b981;">New Order Alert: #${reference}</h2>
               <p>Total Paid: ₵${totalAmount}</p>
+              
               <h3>Customer & Delivery Details:</h3>
-              // ... (delivery details HTML remains the same)
+              <ul style="list-style-type: none; padding: 0;">
+                  <li><strong>Customer Name:</strong> ${fullName}</li>
+                  <li><strong>Email:</strong> ${customer.email}</li>
+                  <li><strong>Phone:</strong> ${phoneNumber}</li>
+                  <li><strong>Digital Address:</strong> ${digitalAddress}</li>
+                  <li><strong>Physical Address:</strong> ${deliveryAddress}</li>
+                  <li><strong>Transaction Ref:</strong> ${reference}</li>
+              </ul>
+
               <h3>Items Ordered:</h3>
-              <ul style="padding-left: 20px;">${itemsHtml}</ul>
+              <ul style="padding-left: 20px;">
+                  ${itemsHtml}
+              </ul>
             `;
 
             // Send to Customer (Receipt)
@@ -89,31 +94,16 @@ export async function GET(req) {
                 html: emailHtml,
             });
             
-            // 4. Redirect user to the new Thank You Page
+            // 4. Redirect user to the Thank You Page
             return NextResponse.redirect(new URL(`/thank-you?reference=${reference}`, req.url));
         }
 
-        // If Paystack verification fails (status is not 'success')
+        // If Paystack verification fails
         return NextResponse.redirect(new URL('/?error=payment_failed', req.url));
 
     } catch (error) {
         console.error("FATAL CALLBACK API ERROR:", error);
-
-        // 🛑 CRITICAL: Return a 200 OK to Paystack even if we crash, 
-        // to prevent immediate retries, while still redirecting the user.
-        // The transaction may need to be manually confirmed later.
-        
-        // Redirect the user to a generic failure page
-        const redirectUrl = new URL('/?error=server_issue', req.url);
-        
-        // Send a temporary redirect response to the client
-        const response = NextResponse.redirect(redirectUrl);
-        
-        // Critically, return a 200 for Paystack and then log the error.
-        // For Vercel, simply throwing the error might prevent Paystack from receiving a clean response.
-        // A cleaner approach is to ensure all external calls are robust and redirect gracefully.
-        
-        // Revert to simply redirecting on error, which is often cleaner in Next.js
+        // Redirect on error to avoid crashing the user experience
         return NextResponse.redirect(new URL('/?error=server_issue', req.url));
     }
 }
