@@ -1,10 +1,10 @@
-// app/api/paystack/callback/route.js
+// app/api/paystack/callback/route.js (Final fix for DB saving)
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const ADMIN_EMAIL = 'YOUR_ADMIN_EMAIL@example.com'; // 🛑 REMEMBER TO CHANGE THIS TO YOUR EMAIL
+const ADMIN_EMAIL = 'YOUR_ADMIN_EMAIL@example.com'; 
 
 export async function GET(req) {
     const { searchParams } = new URL(req.url);
@@ -24,27 +24,31 @@ export async function GET(req) {
         if (verifyData.data && verifyData.data.status === 'success') {
             const { customer, amount, metadata } = verifyData.data;
 
-            // Extract details with safety fallback
+            // Extract details with safety fallback (metadata can be null or miss fields)
             const { 
-                fullName, 
-                phoneNumber, 
-                digitalAddress, 
-                deliveryAddress,
+                fullName = 'N/A', // 🛑 Added N/A fallback
+                phoneNumber = 'N/A', // 🛑 Added N/A fallback
+                digitalAddress = 'N/A', // 🛑 Added N/A fallback
+                deliveryAddress = 'N/A', // 🛑 Added N/A fallback
                 cartItems = [] 
-            } = metadata;
+            } = metadata || {}; // 🛑 IMPORTANT: Default metadata to empty object if null
 
             const totalAmount = (amount/100).toFixed(2);
             
             // --- 2. Save Order to Supabase ---
+            // 🛑 CRITICAL: Ensure the fields are mapped correctly to the database columns
             const { error: dbError } = await supabase.from('orders').insert({
                 customer_email: customer.email,
                 amount: totalAmount,
                 reference: reference,
                 status: 'paid',
-                full_name: fullName,
+                
+                // Mapped Customer/Delivery Details
+                full_name: fullName, 
                 phone_number: phoneNumber,
                 digital_address: digitalAddress,
                 delivery_address: deliveryAddress, 
+
                 order_items_json: JSON.stringify(cartItems), 
             });
             
@@ -57,7 +61,6 @@ export async function GET(req) {
                 `<li>${item.name} (x${item.quantity}) - Price: ₵${item.price.toFixed(2)} each</li>`
             ).join('');
 
-            // 🛑 FIXED: The email HTML now explicitly includes the delivery variables
             const emailHtml = `
               <h2 style="color: #10b981;">New Order Alert: #${reference}</h2>
               <p>Total Paid: ₵${totalAmount}</p>
@@ -78,7 +81,7 @@ export async function GET(req) {
               </ul>
             `;
 
-            // Send to Customer (Receipt)
+            // Send emails (Customer and Admin)
             await resend.emails.send({
                 from: 'Orders <onboarding@resend.dev>',
                 to: [customer.email],
@@ -86,7 +89,6 @@ export async function GET(req) {
                 html: emailHtml.replace('New Order Alert:', 'Your Order Confirmation:'),
             });
             
-            // Send to Admin (Notification)
             await resend.emails.send({
                 from: 'Orders <onboarding@resend.dev>',
                 to: [ADMIN_EMAIL], 
@@ -103,7 +105,6 @@ export async function GET(req) {
 
     } catch (error) {
         console.error("FATAL CALLBACK API ERROR:", error);
-        // Redirect on error to avoid crashing the user experience
         return NextResponse.redirect(new URL('/?error=server_issue', req.url));
     }
 }
