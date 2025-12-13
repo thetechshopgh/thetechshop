@@ -1,17 +1,22 @@
-// app/admin/page.jsx (Comprehensive CRUD)
+// app/admin/page.jsx (Comprehensive CRUD with Supabase File Upload)
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Loader2, Trash2, Edit2, X, AlertTriangle, PlusCircle } from 'lucide-react'
+import { Loader2, Trash2, Edit2, X, AlertTriangle, PlusCircle, UploadCloud } from 'lucide-react'
 import Image from 'next/image'
+// You must run: npm install uuid (if you haven't already)
+import { v4 as uuidv4 } from 'uuid'; 
+
+// IMPORTANT: Ensure this matches your Supabase Storage Bucket Name
+const BUCKET_NAME = 'product-images'; // Assuming you are using 'product-images'
 
 const initialProductState = {
     name: '',
     description: '',
-    detailed_description: '', // New field
+    detailed_description: '',
     price: 0,
-    image_url: '',
-    specs: {}, // New JSON field for specs
+    image_url: '', 
+    specs: {},
 };
 
 export default function AdminDashboard() {
@@ -21,6 +26,10 @@ export default function AdminDashboard() {
     const [error, setError] = useState(null)
     const [isEditing, setIsEditing] = useState(false);
     const [currentProduct, setCurrentProduct] = useState(initialProductState);
+    
+    // Image Upload States
+    const [imageFile, setImageFile] = useState(null); 
+    const fileInputRef = useRef(null); 
 
     useEffect(() => {
         fetchProducts()
@@ -40,6 +49,41 @@ export default function AdminDashboard() {
             [name]: name === 'price' ? parseFloat(value) || 0 : value,
         }));
     };
+    
+    // --- File Upload Handlers ---
+    const handleFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+            setError(null);
+        }
+    };
+
+    const uploadImage = async (file) => {
+        if (!file) return currentProduct.image_url; 
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false,
+            });
+
+        if (uploadError) {
+            throw new Error(`Image upload failed: ${uploadError.message}`);
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from(BUCKET_NAME)
+            .getPublicUrl(filePath);
+
+        return publicUrl;
+    };
+    // -------------------------
 
     const handleSpecsChange = (key, value) => {
         setCurrentProduct(prev => ({
@@ -61,50 +105,73 @@ export default function AdminDashboard() {
         e.preventDefault();
         setIsSubmitting(true);
         setError(null);
+        let publicImageUrl = currentProduct.image_url;
 
-        // Prepare data for Supabase (convert specs object to JSON string if necessary, though Supabase handles JSONB)
-        const productToSave = {
-            ...currentProduct,
-            specs: currentProduct.specs,
-            // Ensure price is saved as a number
-            price: parseFloat(currentProduct.price),
-        };
-
-        let result;
-        if (isEditing && currentProduct.id) {
-            // EDIT/UPDATE LOGIC
-            result = await supabase
-                .from('products')
-                .update(productToSave)
-                .eq('id', currentProduct.id);
-        } else {
-            // CREATE LOGIC
-            result = await supabase
-                .from('products')
-                .insert([productToSave]);
+        // Validation for new product without image
+        if (!isEditing && !imageFile) {
+            setError("Please select an image file for the new product.");
+            setIsSubmitting(false);
+            return;
         }
 
-        if (result.error) {
-            setError(`Failed to save product: ${result.error.message}`);
-        } else {
-            await fetchProducts(); // Refresh list
+        try {
+            // 1. Upload Image (only if a new file is selected)
+            if (imageFile) {
+                publicImageUrl = await uploadImage(imageFile);
+            }
+            
+            // 2. Prepare data for Supabase
+            const productToSave = {
+                ...currentProduct,
+                image_url: publicImageUrl, // Save the new/old URL
+                specs: currentProduct.specs,
+                price: parseFloat(currentProduct.price),
+            };
+
+            let result;
+            if (isEditing && currentProduct.id) {
+                // EDIT/UPDATE LOGIC
+                result = await supabase
+                    .from('products')
+                    .update(productToSave)
+                    .eq('id', currentProduct.id);
+            } else {
+                // CREATE LOGIC
+                result = await supabase
+                    .from('products')
+                    .insert([productToSave]);
+            }
+
+            if (result.error) {
+                throw new Error(`Database save failed: ${result.error.message}`);
+            }
+
+            // 3. Cleanup and Refresh
+            await fetchProducts();
             setCurrentProduct(initialProductState);
             setIsEditing(false);
+            setImageFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = ''; // Clear file input
+
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsSubmitting(false);
     };
 
     const handleEdit = (product) => {
-        // Set product for editing, including merging specs if they are null
         setCurrentProduct({ 
             ...product,
             specs: product.specs || {}
         });
         setIsEditing(true);
+        setImageFile(null); 
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const handleDelete = async (id, name) => {
-        if (!window.confirm(`Are you sure you want to delete the product: "${name}"?`)) {
+        if (!window.confirm(`Are you sure you want to delete the product: "${name}"? This action cannot be undone.`)) {
             return;
         }
         setLoading(true);
@@ -113,7 +180,8 @@ export default function AdminDashboard() {
         if (error) {
             setError(`Failed to delete product: ${error.message}`);
         } else {
-            await fetchProducts(); // Refresh list
+            // Optional: You could add logic here to delete the image from storage too
+            await fetchProducts();
         }
         setLoading(false);
     };
@@ -135,7 +203,7 @@ export default function AdminDashboard() {
                     {isEditing ? 'Edit Product' : 'Add New Product'}
                     {isEditing && (
                         <button 
-                            onClick={() => { setIsEditing(false); setCurrentProduct(initialProductState); }}
+                            onClick={() => { setIsEditing(false); setCurrentProduct(initialProductState); setImageFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                             className="ml-4 text-sm text-red-500 hover:text-red-700 flex items-center gap-1"
                         >
                             <X size={16} /> Cancel Edit
@@ -159,13 +227,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* Image URL */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Image URL</label>
-                        <input type="url" name="image_url" value={currentProduct.image_url} onChange={handleChange}
-                            className="mt-1 w-full rounded-md border p-3 focus:ring-indigo-500" />
-                    </div>
-
                     {/* Short Description */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Short Description (Used on Storefront)</label>
@@ -180,18 +241,49 @@ export default function AdminDashboard() {
                             className="mt-1 w-full rounded-md border p-3 focus:ring-indigo-500"></textarea>
                     </div>
 
+                    {/* 🛑 Image File Upload Area */}
+                    <div className="border p-4 rounded-lg bg-gray-50">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Product Image (JPG/PNG)</label>
+                        <div className="relative flex min-h-[120px] items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white transition-colors hover:bg-gray-100">
+                            
+                            {(isEditing && currentProduct.image_url && !imageFile) ? (
+                                // Show current image when editing and no new file selected
+                                <div className="relative w-full h-full p-2">
+                                    <Image src={currentProduct.image_url} alt="Current Product Image" layout="fill" objectFit="contain" />
+                                </div>
+                            ) : imageFile ? (
+                                // Show preview of new selected file
+                                <p className="p-4 text-sm text-green-700 font-medium">New file selected: **{imageFile.name}**</p>
+                            ) : (
+                                // Default upload prompt
+                                <div className="text-center text-gray-400 p-4">
+                                    <UploadCloud className="mx-auto mb-2 h-6 w-6" />
+                                    <p>Click to select file</p>
+                                </div>
+                            )}
+
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={handleFileChange}
+                                ref={fileInputRef}
+                                required={!isEditing} // Require file only for new products
+                                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                            />
+                        </div>
+                        <p className="mt-2 text-xs text-gray-500">
+                            {isEditing ? "Leave blank to keep the existing image." : "Select an image to upload."}
+                        </p>
+                    </div>
+                    
                     {/* Specs Section */}
                     <div className="border p-4 rounded-lg">
                         <h3 className="text-lg font-bold text-gray-700 mb-3">Key Specifications</h3>
                         <div className="space-y-3">
                             {Object.entries(currentProduct.specs).map(([key, value]) => (
                                 <div key={key} className="flex gap-4 items-center">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Spec Name (e.g., 'RAM')" 
-                                        value={key} 
+                                    <input type="text" placeholder="Spec Name (e.g., 'RAM')" value={key} 
                                         onChange={(e) => {
-                                            // Handle key change (must delete old key and add new one)
                                             const newKey = e.target.value;
                                             if (newKey) {
                                                 const newSpecs = { ...currentProduct.specs };
@@ -202,26 +294,18 @@ export default function AdminDashboard() {
                                         }}
                                         className="w-1/3 rounded-md border p-2 text-sm"
                                     />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Value (e.g., '16GB')" 
-                                        value={value} 
+                                    <input type="text" placeholder="Value (e.g., '16GB')" value={value} 
                                         onChange={(e) => handleSpecsChange(key, e.target.value)}
                                         className="w-2/3 rounded-md border p-2 text-sm"
                                     />
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleSpecsDelete(key)}
-                                        className="text-red-500 hover:text-red-700 transition"
+                                    <button type="button" onClick={() => handleSpecsDelete(key)}
+                                        className="text-red-500 hover:text-red-800 transition"
                                     >
                                         <X size={16} />
                                     </button>
                                 </div>
                             ))}
-                            {/* Button to add new spec */}
-                            <button 
-                                type="button" 
-                                onClick={() => handleSpecsChange(`New Spec ${Object.keys(currentProduct.specs).length + 1}`, '')}
+                            <button type="button" onClick={() => handleSpecsChange(`New Spec ${Object.keys(currentProduct.specs).length + 1}`, '')}
                                 className="flex items-center text-indigo-600 hover:text-indigo-800 transition text-sm font-medium pt-2"
                             >
                                 <PlusCircle size={16} className="mr-1" /> Add Specification
@@ -229,14 +313,13 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-
                     {/* Submit Button */}
                     <button 
                         type="submit" 
                         disabled={isSubmitting}
                         className="btn-gradient w-full py-3 rounded-lg text-white font-bold text-lg flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                        {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : null}
+                        {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <UploadCloud size={20} />}
                         {isEditing ? 'Save Changes' : 'Add Product'}
                     </button>
                 </form>
@@ -252,6 +335,7 @@ export default function AdminDashboard() {
                         <div key={product.id} className="bg-white p-4 rounded-xl shadow flex items-center justify-between transition-all hover:ring-2 hover:ring-indigo-100">
                             <div className="flex items-center gap-4">
                                 <div className="relative w-16 h-16 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
+                                    {/* Using next/image requires the component to be wrapped in a container with dimensions */}
                                     {product.image_url && <Image src={product.image_url} alt={product.name} fill className="object-cover" />}
                                 </div>
                                 <div>
@@ -260,20 +344,8 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
                             <div className="flex gap-3">
-                                <button 
-                                    onClick={() => handleEdit(product)}
-                                    className="p-2 text-indigo-600 hover:text-indigo-800 rounded-full hover:bg-indigo-50 transition"
-                                    title="Edit Product"
-                                >
-                                    <Edit2 size={20} />
-                                </button>
-                                <button 
-                                    onClick={() => handleDelete(product.id, product.name)}
-                                    className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50 transition"
-                                    title="Delete Product"
-                                >
-                                    <Trash2 size={20} />
-                                </button>
+                                <button onClick={() => handleEdit(product)} className="p-2 text-indigo-600 hover:text-indigo-800 rounded-full hover:bg-indigo-50 transition" title="Edit Product"> <Edit2 size={20} /> </button>
+                                <button onClick={() => handleDelete(product.id, product.name)} className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50 transition" title="Delete Product"> <Trash2 size={20} /> </button>
                             </div>
                         </div>
                     ))
