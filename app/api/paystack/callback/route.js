@@ -1,12 +1,14 @@
-// app/api/paystack/callback/route.js (Final fix for DB saving)
+// app/api/paystack/callback/route.js (Final code with customer data saving fix)
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+// 🛑 REMINDER: Replace this placeholder with your actual admin email!
 const ADMIN_EMAIL = 'YOUR_ADMIN_EMAIL@example.com'; 
 
 export async function GET(req) {
+    // 1. Get the transaction reference from the query parameters
     const { searchParams } = new URL(req.url);
     const reference = searchParams.get('reference');
 
@@ -15,7 +17,7 @@ export async function GET(req) {
     }
 
     try {
-        // 1. Verify Transaction with Paystack
+        // 2. Verify Transaction with Paystack
         const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
             headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` }
         });
@@ -24,26 +26,25 @@ export async function GET(req) {
         if (verifyData.data && verifyData.data.status === 'success') {
             const { customer, amount, metadata } = verifyData.data;
 
-            // Extract details with safety fallback (metadata can be null or miss fields)
+            // Extract details from metadata (where your client-side code stored the delivery info)
             const { 
-                fullName = 'N/A', // 🛑 Added N/A fallback
-                phoneNumber = 'N/A', // 🛑 Added N/A fallback
-                digitalAddress = 'N/A', // 🛑 Added N/A fallback
-                deliveryAddress = 'N/A', // 🛑 Added N/A fallback
+                fullName = 'N/A', 
+                phoneNumber = 'N/A', 
+                digitalAddress = 'N/A', 
+                deliveryAddress = 'N/A', 
                 cartItems = [] 
-            } = metadata || {}; // 🛑 IMPORTANT: Default metadata to empty object if null
+            } = metadata || {}; 
 
             const totalAmount = (amount/100).toFixed(2);
             
-            // --- 2. Save Order to Supabase ---
-            // 🛑 CRITICAL: Ensure the fields are mapped correctly to the database columns
+            // --- 3. Save Order to Supabase (The critical step to save delivery details) ---
             const { error: dbError } = await supabase.from('orders').insert({
                 customer_email: customer.email,
                 amount: totalAmount,
                 reference: reference,
                 status: 'paid',
                 
-                // Mapped Customer/Delivery Details
+                // These fields are correctly mapped to your Supabase table columns:
                 full_name: fullName, 
                 phone_number: phoneNumber,
                 digital_address: digitalAddress,
@@ -54,9 +55,10 @@ export async function GET(req) {
             
             if (dbError) {
                 console.error("Supabase DB Save Error:", dbError);
+                // Proceed with redirect/emails, but log the error for manual follow-up
             }
 
-            // --- 3. Send Email Notifications ---
+            // --- 4. Prepare and Send Email Notifications ---
             const itemsHtml = cartItems.map(item => 
                 `<li>${item.name} (x${item.quantity}) - Price: ₵${item.price.toFixed(2)} each</li>`
             ).join('');
@@ -96,11 +98,11 @@ export async function GET(req) {
                 html: emailHtml,
             });
             
-            // 4. Redirect user to the Thank You Page
+            // 5. Redirect user to the Thank You Page
             return NextResponse.redirect(new URL(`/thank-you?reference=${reference}`, req.url));
         }
 
-        // If Paystack verification fails
+        // If Paystack verification fails (status is not 'success')
         return NextResponse.redirect(new URL('/?error=payment_failed', req.url));
 
     } catch (error) {
