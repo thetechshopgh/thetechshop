@@ -1,12 +1,13 @@
 // app/checkout/page.jsx
 'use client'
 import { useState } from 'react';
-import { useCart } from '../../components/CartContext'; // Adjust path
+import { useCart } from '../../components/CartContext'; // Adjust path if needed
 import { useRouter } from 'next/navigation';
 
 export default function Checkout() {
   const { cart, cartTotal } = useCart();
   const router = useRouter();
+  const [isProcessing, setIsProcessing] = useState(false); // New loading state
   
   // State for delivery information
   const [formData, setFormData] = useState({
@@ -23,32 +24,57 @@ export default function Checkout() {
 
   const handlePayment = async (e) => {
     e.preventDefault();
+    setIsProcessing(true); // Disable button while processing
 
-    if (cart.length === 0) return alert("Your cart is empty.");
+    if (cart.length === 0) {
+        alert("Your cart is empty.");
+        setIsProcessing(false);
+        return;
+    }
 
-    // 1. Prepare data for Paystack initialization
-    const res = await fetch('/api/paystack/initialize', {
-      method: 'POST',
-      body: JSON.stringify({
-        email: formData.email,
-        amount: cartTotal,
-        // Pass all delivery details in metadata
-        metadata: {
-          cartItems: cart,
-          fullName: formData.name,
-          phoneNumber: formData.phone,
-          digitalAddress: formData.digitalAddress,
-          deliveryAddress: formData.address,
-        },
-      }),
-    });
-    
-    const data = await res.json();
-    
-    if (data.authorization_url) {
-      window.location.href = data.authorization_url; // Redirect to Paystack
-    } else {
-      alert("Failed to initialize payment. Please try again.");
+    try {
+        // 1. Prepare data payload
+        const payload = {
+            email: formData.email,
+            amount: cartTotal,
+            // Pass all delivery details in metadata
+            metadata: {
+                cartItems: cart,
+                fullName: formData.name,
+                phoneNumber: formData.phone,
+                digitalAddress: formData.digitalAddress,
+                deliveryAddress: formData.address,
+            },
+        };
+
+        // 2. Send to Paystack initialization API
+        const res = await fetch('/api/paystack/initialize', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json', // 🛑 CRITICAL FIX: This was likely missing implicitly
+            },
+            body: JSON.stringify(payload),
+        });
+        
+        if (!res.ok) {
+             const errorText = await res.text();
+             console.error("Payment API Error:", errorText);
+             throw new Error("Failed to connect to payment server.");
+        }
+
+        const data = await res.json();
+        
+        if (data.authorization_url) {
+            window.location.href = data.authorization_url; // Redirect to Paystack
+        } else {
+            alert("Failed to initialize payment. Please try again.");
+            setIsProcessing(false);
+        }
+
+    } catch (error) {
+        console.error("Checkout Error:", error);
+        alert("An error occurred while starting payment. Please check your internet connection.");
+        setIsProcessing(false);
     }
   };
   
@@ -110,8 +136,12 @@ export default function Checkout() {
         
         {/* Submit Button */}
         <div className="md:col-span-2 pt-4">
-          <button type="submit" className="btn-gradient w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg">
-            Pay ₵{cartTotal.toFixed(2)}
+          <button 
+            type="submit" 
+            disabled={isProcessing}
+            className={`btn-gradient w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {isProcessing ? 'Processing...' : `Pay ₵${cartTotal.toFixed(2)}`}
           </button>
         </div>
       </form>
