@@ -1,14 +1,12 @@
-// app/admin/page.jsx (Comprehensive CRUD with Supabase File Upload)
+// app/admin/page.jsx (Comprehensive CRUD with original Date.now() File Upload)
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Loader2, Trash2, Edit2, X, AlertTriangle, PlusCircle, UploadCloud } from 'lucide-react'
 import Image from 'next/image'
-// You must run: npm install uuid (if you haven't already)
-import { v4 as uuidv4 } from 'uuid'; 
 
 // IMPORTANT: Ensure this matches your Supabase Storage Bucket Name
-const BUCKET_NAME = 'product-images'; // Assuming you are using 'product-images'
+const BUCKET_NAME = 'products'; // Using 'products' bucket name from your original snippet (supabase.storage.from('products'))
 
 const initialProductState = {
     name: '',
@@ -50,7 +48,7 @@ export default function AdminDashboard() {
         }));
     };
     
-    // --- File Upload Handlers ---
+    // --- File Upload Handlers (Using Date.now() for file naming) ---
     const handleFileChange = (e) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -63,8 +61,9 @@ export default function AdminDashboard() {
         if (!file) return currentProduct.image_url; 
 
         const fileExt = file.name.split('.').pop();
-        const fileName = `${uuidv4()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        // 🛑 Using Date.now() as requested
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`; 
 
         const { error: uploadError } = await supabase.storage
             .from(BUCKET_NAME)
@@ -83,7 +82,7 @@ export default function AdminDashboard() {
 
         return publicUrl;
     };
-    // -------------------------
+    // -------------------------------------------------------------
 
     const handleSpecsChange = (key, value) => {
         setCurrentProduct(prev => ({
@@ -107,7 +106,7 @@ export default function AdminDashboard() {
         setError(null);
         let publicImageUrl = currentProduct.image_url;
 
-        // Validation for new product without image
+        // Validation: require file only for new products, not when editing (unless a new file is chosen)
         if (!isEditing && !imageFile) {
             setError("Please select an image file for the new product.");
             setIsSubmitting(false);
@@ -166,8 +165,8 @@ export default function AdminDashboard() {
             specs: product.specs || {}
         });
         setIsEditing(true);
-        setImageFile(null); 
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        setImageFile(null); // Clear image file state on edit start
+        if (fileInputRef.current) fileInputRef.current.value = ''; // Clear actual file input
     };
 
     const handleDelete = async (id, name) => {
@@ -180,7 +179,6 @@ export default function AdminDashboard() {
         if (error) {
             setError(`Failed to delete product: ${error.message}`);
         } else {
-            // Optional: You could add logic here to delete the image from storage too
             await fetchProducts();
         }
         setLoading(false);
@@ -241,21 +239,22 @@ export default function AdminDashboard() {
                             className="mt-1 w-full rounded-md border p-3 focus:ring-indigo-500"></textarea>
                     </div>
 
-                    {/* 🛑 Image File Upload Area */}
+                    {/* Image File Upload Area */}
                     <div className="border p-4 rounded-lg bg-gray-50">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Product Image (JPG/PNG)</label>
                         <div className="relative flex min-h-[120px] items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white transition-colors hover:bg-gray-100">
                             
-                            {(isEditing && currentProduct.image_url && !imageFile) ? (
-                                // Show current image when editing and no new file selected
-                                <div className="relative w-full h-full p-2">
-                                    <Image src={currentProduct.image_url} alt="Current Product Image" layout="fill" objectFit="contain" />
+                            {isEditing && currentProduct.image_url && !imageFile ? (
+                                // Show current image prompt when editing
+                                <div className="p-4 text-center">
+                                    <p className="text-sm text-gray-700 font-medium">Current Image in use.</p>
+                                    <p className="text-xs text-gray-500">Select a new file to replace it.</p>
                                 </div>
                             ) : imageFile ? (
-                                // Show preview of new selected file
+                                // Show preview/name of newly selected file
                                 <p className="p-4 text-sm text-green-700 font-medium">New file selected: **{imageFile.name}**</p>
                             ) : (
-                                // Default upload prompt
+                                // Default upload prompt for new product or if user cancels file selection
                                 <div className="text-center text-gray-400 p-4">
                                     <UploadCloud className="mx-auto mb-2 h-6 w-6" />
                                     <p>Click to select file</p>
@@ -335,7 +334,6 @@ export default function AdminDashboard() {
                         <div key={product.id} className="bg-white p-4 rounded-xl shadow flex items-center justify-between transition-all hover:ring-2 hover:ring-indigo-100">
                             <div className="flex items-center gap-4">
                                 <div className="relative w-16 h-16 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
-                                    {/* Using next/image requires the component to be wrapped in a container with dimensions */}
                                     {product.image_url && <Image src={product.image_url} alt={product.name} fill className="object-cover" />}
                                 </div>
                                 <div>
