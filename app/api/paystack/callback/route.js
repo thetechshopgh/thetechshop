@@ -26,14 +26,20 @@ export async function GET(req) {
             const { customer, amount, metadata } = verifyData.data;
 
             // Extract details
-            const { 
-                fullName, 
-                phoneNumber, 
-                digitalAddress, 
-                deliveryAddress,
-                cartItems 
-            } = metadata;
-            const totalAmount = (amount/100).toFixed(2);
+            // app/api/paystack/callback/route.js (UPDATED CODE SNIPPET)
+
+    // Extract details with safety fallback using the OR (||) operator
+    const { 
+        fullName, 
+        phoneNumber, 
+        digitalAddress, 
+        deliveryAddress,
+        cartItems = [] // 🛑 CRITICAL FIX: Default to an empty array if cartItems is missing
+    } = metadata;
+
+    const totalAmount = (amount/100).toFixed(2);
+    
+    // ... (The rest of the logic follows)
             
             // --- 2. Save Order to Supabase ---
             const { error: dbError } = await supabase.from('orders').insert({
