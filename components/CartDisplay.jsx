@@ -16,25 +16,22 @@ export default function CartDisplay() {
 
   return (
     <>
-      {/* 1. Cart Icon Button: Moved to Floating Bottom Right */}
+      {/* 1. Cart Icon Button (Fixed Bottom Right) */}
       <button 
         onClick={() => setIsOpen(true)}
-        // 🚨 CRITICAL CHANGE: Added fixed positioning for floating button
         className="fixed bottom-8 right-8 z-40 p-4 rounded-full bg-blue-600 hover:bg-blue-700 transition shadow-lg text-white"
         aria-label="View shopping cart"
       >
-        {/* Replaced old icon styling with simpler white icon */}
         <ShoppingBag size={28} className="text-white" />
         
         {isLoaded && cartItemCount > 0 && (
-          // Adjusted position and size for the new button style
           <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white">
             {cartItemCount}
           </span>
         )}
       </button>
 
-      {/* 2. Cart Sidebar (Drawer) (Unchanged since z-index fix) */}
+      {/* 2. Cart Sidebar (Drawer) */}
       <div 
         className={`fixed inset-0 z-[999] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
@@ -44,9 +41,8 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* Sidebar Container: w-96 (384px wide) */}
         <div 
-          className={`fixed right-0 top-0 bottom-0 w-96 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
+          className={`fixed right-0 top-0 bottom-0 w-full md:w-96 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
           
           {/* Header */}
@@ -130,7 +126,6 @@ export default function CartDisplay() {
             <button 
               onClick={handleCheckout} 
               disabled={!isLoaded || cart.length === 0}
-              // Used a blue gradient theme for consistency with the new cart button
               className="w-full py-4 rounded-xl text-white font-bold text-lg disabled:opacity-50 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition shadow-lg"
             >
               Proceed to Checkout
