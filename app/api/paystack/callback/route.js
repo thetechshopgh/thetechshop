@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'; // Assuming this is now the Admin/Service Role Key client
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-// 🛑 REMINDER: Ensure this is your actual, secure administrative email!
 const ADMIN_EMAIL = 'thetechshopgh@gmail.com'; 
 
 // --- Core Verification and Fulfillment Logic ---
@@ -12,7 +11,7 @@ async function handlePaystackFulfillment(reference) {
     let order_data_for_db = {};
     let totalAmount = '0.00';
     let customerEmail = 'no-email-found@example.com';
-    let dbSuccess = false; // Initialize DB success flag
+    let dbSuccess = false; 
 
     // 1. Verify Transaction with Paystack
     const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
@@ -26,6 +25,9 @@ async function handlePaystackFulfillment(reference) {
     }
     
     const { customer, amount, metadata } = verifyData.data;
+    
+    // Safety check: Ensure metadata is an object, even if Paystack returns null/undefined
+    const paystackMetadata = metadata || {}; 
 
     customerEmail = customer.email;
     totalAmount = (amount/100).toFixed(2);
@@ -33,24 +35,27 @@ async function handlePaystackFulfillment(reference) {
     // 2. Robust Data Extraction from Metadata
     customerDetails = {
         // Fallback checks for common key naming variations
-        fullName: metadata?.fullName || metadata?.full_name || 'N/A', 
-        phoneNumber: metadata?.phoneNumber || metadata?.phone_number || 'N/A', 
-        digitalAddress: metadata?.digitalAddress || metadata?.digital_address || 'N/A', 
-        deliveryAddress: metadata?.deliveryAddress || metadata?.delivery_address || 'N/A', 
-        cartItems: metadata?.cartItems || [], 
+        fullName: paystackMetadata.fullName || paystackMetadata.full_name || 'N/A', 
+        phoneNumber: paystackMetadata.phoneNumber || paystackMetadata.phone_number || 'N/A', 
+        digitalAddress: paystackMetadata.digitalAddress || paystackMetadata.digital_address || 'N/A', 
+        deliveryAddress: paystackMetadata.deliveryAddress || paystackMetadata.delivery_address || 'N/A', 
+        cartItems: paystackMetadata.cartItems || [], 
     };
 
     // Prepare data for database insertion
     order_data_for_db = {
         customer_email: customerEmail,
-        amount: totalAmount,
+        // 🚨 FIX 1: Convert amount string to number for database integrity 🚨
+        amount: parseFloat(totalAmount), 
+        // ------------------------------------------------------------------
         reference: reference,
         status: 'paid',
         full_name: customerDetails.fullName, 
         phone_number: customerDetails.phoneNumber,
         digital_address: customerDetails.digitalAddress,
         delivery_address: customerDetails.deliveryAddress, 
-        order_items_json: JSON.stringify(customerDetails.cartItems), 
+        // 🚨 FIX 2: Ensure order_items_json is a clean array/object 🚨
+        order_items_json: JSON.parse(JSON.stringify(customerDetails.cartItems)), 
     };
 
     // --- 3. Save Order to Supabase (Unique Transaction Check) ---
@@ -65,7 +70,6 @@ async function handlePaystackFulfillment(reference) {
         // PGRST116 means 'No rows found'. We only proceed if no order exists.
         if (fetchError && fetchError.code !== 'PGRST116') { 
             console.error("Supabase Order Check Error (Critical):", fetchError);
-            // We still proceed to send email even if this check fails
         }
         
         if (!existingOrder) {
@@ -76,13 +80,13 @@ async function handlePaystackFulfillment(reference) {
             
             if (dbError) {
                 console.error("CRITICAL SUPABASE DB SAVE ERROR:", dbError);
-                dbSuccess = false; // Insertion failed
+                dbSuccess = false; 
             } else {
-                dbSuccess = true; // Insertion succeeded
+                dbSuccess = true; 
             }
         } else {
             console.log(`Order ${reference} already exists. Skipping insertion.`);
-            dbSuccess = true; // Already saved
+            dbSuccess = true; 
         }
     } catch (dbException) {
         console.error("UNEXPECTED DB EXCEPTION:", dbException);
@@ -91,7 +95,8 @@ async function handlePaystackFulfillment(reference) {
 
     // --- 4. Send Email Notifications (Guaranteeing Delivery) ---
     const itemsHtml = customerDetails.cartItems.map(item => 
-        `<li>${item.name} (x${item.quantity}) - Price: ₵${(item.price || 0).toFixed(2)} each</li>`
+        // Use item.price directly, since we already converted it to a number/float in the database payload
+        `<li>${item.name} (x${item.quantity}) - Price: ₵${(item.price || 0).toFixed(2)} each</li>` 
     ).join('');
 
     // Dynamically adjust email subject based on DB status for admin
@@ -147,7 +152,7 @@ async function handlePaystackFulfillment(reference) {
 // 🚨 HTTP GET Handler (Customer Redirect) 🚨
 // ------------------------------------------------------------------
 export async function GET(req) {
-    const url = new URL(req.url);
+    const url = new URL(req.url);
     const reference = url.searchParams.get('reference');
 
     if (!reference) {
