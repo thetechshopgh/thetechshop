@@ -40,9 +40,10 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* Sidebar Container: max-w-sm (384px) with guaranteed overflow control */}
+        {/* 🚨 CRITICAL FIX: Sidebar Container with Fixed Width */}
         <div 
-          className={`fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
+          // Replaced max-w-sm with fixed width (w-96 is 384px) and added !w-96 to force override.
+          className={`fixed right-0 top-0 bottom-0 w-96 !w-96 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
           
           {/* Header: Reduced to minimum px-4 padding */}
@@ -68,7 +69,7 @@ export default function CartDisplay() {
             ) : (
               /* THE LOOP - ABSOLUTE COLUMN CONTROL (Grid) */
               cart.map(item => (
-                // Inner padding removed (p-0) and gap reduced (gap-2)
+                // Inner padding applied here with gap-2
                 <div key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-2 items-center border-b border-slate-200 py-3 px-4">
                   
                   {/* Column 1: Image (Fixed 64px) */}
