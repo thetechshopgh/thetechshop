@@ -1,3 +1,4 @@
+// components/CartDisplay.jsx (FINAL VERIFIED VERSION)
 'use client'
 import { useCart } from '@/components/CartContext';
 import { ShoppingBag, X, MinusCircle, PlusCircle } from 'lucide-react'; 
@@ -5,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function CartDisplay() {
-  // Ensure removeFromCart and addToCart are destructured here!
+  // Ensure all functions are correctly destructured
   const { cart, cartTotal, addToCart, removeFromCart } = useCart(); 
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -68,12 +69,11 @@ export default function CartDisplay() {
                   
                   <div className="flex-grow flex flex-col">
                     <h3 className="font-semibold text-slate-900">{item.name}</h3>
-                    {/* Safety check for price rendering */}
                     <span className="text-sm text-slate-500 mb-2">₵{(item.price || 0).toFixed(2)} each</span>
                     
                     {/* Quantity Controls */}
                     <div className="flex items-center space-x-2">
-                        {/* Remove/Decrease Quantity - Linked to removeFromCart */}
+                        {/* Remove/Decrease Quantity */}
                         <button 
                           onClick={() => removeFromCart(item.id)} 
                           className="p-1 rounded-full text-red-500 hover:bg-red-50 transition"
@@ -82,7 +82,7 @@ export default function CartDisplay() {
                           <MinusCircle size={20} />
                         </button>
                         <span className="text-md font-medium text-slate-700">{item.quantity}</span>
-                        {/* Add/Increase Quantity - Linked to addToCart */}
+                        {/* Add/Increase Quantity */}
                         <button 
                           onClick={() => addToCart(item)} 
                           className="p-1 rounded-full text-green-500 hover:bg-green-50 transition"
