@@ -16,7 +16,7 @@ export default function CartDisplay() {
 
   return (
     <>
-      {/* 1. Cart Icon Button (This will now only be the visible button) */}
+      {/* 1. Cart Icon Button (Unchanged) */}
       <button 
         onClick={() => setIsOpen(true)}
         className="relative p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition"
@@ -30,9 +30,10 @@ export default function CartDisplay() {
         )}
       </button>
 
-      {/* 2. Cart Sidebar (The Drawer Component - Needs to be high in the DOM) */}
+      {/* 2. Cart Sidebar (Drawer) */}
       <div 
-        className={`fixed inset-0 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        // 🚨 FINAL FIX: Increased z-index to z-[999] to guarantee stacking above the header
+        className={`fixed inset-0 z-[999] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
         {/* Backdrop */}
         <div 
