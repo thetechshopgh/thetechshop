@@ -1,135 +1,139 @@
-// app/page.jsx (Updated with enhanced design)
 'use client'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { motion } from 'framer-motion'
-import { ShoppingBag, Loader2, Search } from 'lucide-react' 
-import Image from 'next/image'
-import Link from 'next/link' // For linking to product pages
 import { useCart } from '@/components/CartContext';
-import CartDisplay from '@/components/CartDisplay';
+import { ShoppingBag, X, MinusCircle, PlusCircle, Loader2 } from 'lucide-react'; 
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-export default function Store() {
-  const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('') 
-  const { addToCart } = useCart();
+export default function CartDisplay() {
+  const { cart, cartTotal, addToCart, removeFromCart, cartItemCount, isLoaded } = useCart(); 
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    fetchProducts()
-  }, [])
-
-  async function fetchProducts() {
-    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false })
-    setProducts(data || [])
-    setLoading(false)
-  }
-
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const handleCheckout = () => {
+    setIsOpen(false);
+    router.push('/checkout');
+  };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD]">
-      {/* Navbar */}
-      <nav className="border-b border-gray-100 bg-white/90 backdrop-blur-sm sticky top-0 z-50">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col md:flex-row gap-4 justify-between items-center">
-          <div className="font-bold text-2xl tracking-tighter text-slate-900">THE<span className="text-indigo-600"> TECH SHOP</span></div>
+    <>
+      {/* 1. Cart Icon Button (Unchanged) */}
+      <button 
+        onClick={() => setIsOpen(true)}
+        className="relative p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition"
+        aria-label="View shopping cart"
+      >
+        <ShoppingBag size={24} className="text-slate-700" />
+        {isLoaded && cartItemCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+            {cartItemCount}
+          </span>
+        )}
+      </button>
+
+      {/* 2. Cart Sidebar (Drawer) */}
+      <div 
+        // 🚨 FINAL FIX: Increased z-index to z-[999] to guarantee stacking above the header
+        className={`fixed inset-0 z-[999] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      >
+        {/* Backdrop */}
+        <div 
+          onClick={() => setIsOpen(false)}
+          className="absolute inset-0 bg-black/50"
+        ></div>
+
+        {/* Sidebar Container: w-96 (384px wide) */}
+        <div 
+          className={`fixed right-0 top-0 bottom-0 w-96 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
+        >
           
-          {/* Search Bar - Enhanced */}
-          <div className="relative w-full max-w-lg">
-            <input 
-              type="text" 
-              placeholder="Search by product name or description..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-full border-2 border-gray-200 bg-white shadow-inner focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
-            />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          {/* Header */}
+          <div className="flex justify-between items-center px-4 py-4 border-b">
+            <h2 className="text-2xl font-bold text-slate-900">Your Cart</h2>
+            <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-slate-100">
+              <X size={24} className="text-slate-900" />
+            </button>
           </div>
-        </div>
-      </nav>
 
-      {/* Hero - Styled and cleaner */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-white to-indigo-50 pb-16 pt-24 text-center border-b border-gray-200">
-        <div className="relative z-10 mx-auto max-w-3xl px-6">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-6xl font-black tracking-tighter text-slate-900 sm:text-7xl"
-          >
-            Powering the Future <br />
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">One Gadget at a Time.</span>
-          </motion.h1>
-          <p className="mt-6 text-xl leading-8 text-slate-600">
-            Hand-picked devices engineered for performance and reliability.
-          </p>
-        </div>
-      </div>
-
-      {/* Grid */}
-      <div className="mx-auto max-w-7xl px-6 py-20">
-        {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-600" size={40}/></div>
-        ) : (
-          <>
-            {/* No results message */}
-            {filteredProducts.length === 0 && (
-              <div className="text-center py-20 text-gray-500">
-                <p className="text-xl">No products found matching "{searchQuery}"</p>
-                <p className="text-sm mt-2">Try searching for a different term.</p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 gap-y-12 gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredProducts.map((product, i) => (
-                <motion.div 
-                  key={product.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="group relative flex flex-col overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-200 transition-all hover:shadow-2xl hover:ring-indigo-200"
-                >
-                  {/* Image Container */}
-                  <div className="relative aspect-square w-full overflow-hidden bg-gray-100 p-4">
-                    {product.image_url ? (
-                      <Image 
-                        src={product.image_url} 
-                        alt={product.name}
-                        fill
-                        className="object-contain transition-transform duration-700 group-hover:scale-105"
-                      />
+          {/* Cart Items List: Scrollable Area */}
+          <div className="flex-1 overflow-y-auto p-0 bg-white">
+            
+            {!isLoaded ? (
+               /* Loading State */
+               <div className="flex flex-col items-center justify-center h-40 text-slate-400">
+                 <Loader2 className="animate-spin mb-2" size={32} />
+                 <p>Loading...</p>
+               </div>
+            ) : cart.length === 0 ? (
+              /* Empty State */
+              <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
+            ) : (
+              /* THE LOOP - Stable Grid Layout */
+              cart.map(item => (
+                <div key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-2 items-center border-b border-slate-200 py-3 px-4">
+                  
+                  {/* Column 1: Image (Fixed 64px) */}
+                  <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden border border-gray-200">
+                    {item.image_url ? (
+                        <img 
+                            src={item.image_url} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover"
+                        />
                     ) : (
-                      <div className="flex h-full items-center justify-center text-gray-400">No Image</div>
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
                     )}
                   </div>
-
-                  {/* Content */}
-                  <div className="flex flex-1 flex-col p-6">
-                    {/* Link to Product Page */}
-                    <Link href={`/products/${product.id}`} className="hover:text-indigo-600 transition duration-300">
-                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600">{product.name}</h3>
-                    </Link>
-                    
-                    <p className="mt-2 flex-1 text-sm text-slate-500">{product.description}</p>
-                    
-                    <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
-                      <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
-                      <button 
-                        onClick={() => addToCart(product)} 
-                        className="flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-600"
-                      >
-                        <ShoppingBag size={16} /> Add to Cart
-                      </button>
+                  
+                  {/* Column 2: Item Details and Controls (1fr) */}
+                  <div className="flex flex-col justify-center overflow-hidden"> 
+                    <h3 className="font-semibold text-slate-900 text-sm mb-1 truncate">{item.name}</h3>
+                    <p className="text-xs text-slate-500 mb-2">Price: ₵{(item.price || 0).toFixed(2)}</p>
+                    <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => removeFromCart(item.id)} 
+                          className="text-slate-500 hover:text-red-500 transition"
+                          aria-label={`Remove one ${item.name}`}
+                        >
+                          <MinusCircle size={20} />
+                        </button>
+                        <span className="text-sm font-bold text-slate-900 w-4 text-center">{item.quantity}</span>
+                        <button 
+                          onClick={() => addToCart(item)} 
+                          className="text-slate-500 hover:text-green-500 transition"
+                          aria-label={`Add one ${item.name}`}
+                        >
+                          <PlusCircle size={20} />
+                        </button>
                     </div>
                   </div>
-                </motion.div>
-              ))}
+                  
+                  {/* Column 3: Item Total (Auto-width) */}
+                  <div className="text-right"> 
+                    <span className="font-bold text-slate-900 text-sm whitespace-nowrap">
+                        ₵{((item.price || 0) * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer/Checkout */}
+          <div className="px-4 py-4 border-t bg-gray-50">
+            <div className="flex justify-between items-center text-xl font-bold mb-4 text-slate-900">
+              <span>Subtotal:</span>
+              <span>₵{cartTotal.toFixed(2)}</span>
             </div>
-          </>
-        )}
+            <button 
+              onClick={handleCheckout} 
+              disabled={!isLoaded || cart.length === 0}
+              className="w-full py-4 rounded-xl text-white font-bold text-lg disabled:opacity-50 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition shadow-lg"
+            >
+              Proceed to Checkout
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  )
+    </>
+  );
 }
