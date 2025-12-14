@@ -1,12 +1,11 @@
-// components/CartDisplay.jsx (FINAL FIX: Comment Removal)
 'use client'
-import { useCart } from '../components/CartContext';
+import { useCart } from '@/components/CartContext';
 import { ShoppingBag, X, MinusCircle, PlusCircle } from 'lucide-react'; 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function CartDisplay() {
-  // Destructure all necessary functions
+  // Ensure removeFromCart and addToCart are destructured here!
   const { cart, cartTotal, addToCart, removeFromCart } = useCart(); 
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -69,11 +68,12 @@ export default function CartDisplay() {
                   
                   <div className="flex-grow flex flex-col">
                     <h3 className="font-semibold text-slate-900">{item.name}</h3>
-                    <span className="text-sm text-slate-500 mb-2">₵{item.price.toFixed(2)} each</span>
+                    {/* Safety check for price rendering */}
+                    <span className="text-sm text-slate-500 mb-2">₵{(item.price || 0).toFixed(2)} each</span>
                     
                     {/* Quantity Controls */}
                     <div className="flex items-center space-x-2">
-                        {/* Remove/Decrease Quantity */}
+                        {/* Remove/Decrease Quantity - Linked to removeFromCart */}
                         <button 
                           onClick={() => removeFromCart(item.id)} 
                           className="p-1 rounded-full text-red-500 hover:bg-red-50 transition"
@@ -82,7 +82,7 @@ export default function CartDisplay() {
                           <MinusCircle size={20} />
                         </button>
                         <span className="text-md font-medium text-slate-700">{item.quantity}</span>
-                        {/* Add/Increase Quantity */}
+                        {/* Add/Increase Quantity - Linked to addToCart */}
                         <button 
                           onClick={() => addToCart(item)} 
                           className="p-1 rounded-full text-green-500 hover:bg-green-50 transition"
@@ -93,8 +93,8 @@ export default function CartDisplay() {
                     </div>
                   </div>
                     
-                    {/* Item Subtotal */}
-                  <span className="font-bold text-slate-900 text-lg flex-shrink-0">₵{(item.price * item.quantity).toFixed(2)}</span>
+                    {/* Item Subtotal (Safe calculation) */}
+                  <span className="font-bold text-slate-900 text-lg flex-shrink-0">₵{((item.price || 0) * item.quantity).toFixed(2)}</span>
                 </div>
               ))
             )}
