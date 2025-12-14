@@ -16,7 +16,7 @@ export default function CartDisplay() {
 
   return (
     <>
-      {/* 1. Cart Icon Button */}
+      {/* 1. Cart Icon Button (Unchanged) */}
       <button 
         onClick={() => setIsOpen(true)}
         className="relative p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition"
@@ -30,7 +30,7 @@ export default function CartDisplay() {
         )}
       </button>
 
-      {/* 2. Cart Sidebar (Drawer) */}
+      {/* 2. Cart Sidebar (Drawer) (Unchanged) */}
       <div 
         className={`fixed inset-0 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
@@ -40,11 +40,11 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* Sidebar Container: flex-col ensures header and footer are separate from the scrollable list */}
+        {/* Sidebar Container */}
         <div 
           className={`fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         >
-          {/* Header */}
+          {/* Header (Unchanged) */}
           <div className="flex justify-between items-center p-6 border-b">
             <h2 className="text-2xl font-bold text-slate-900">Your Cart</h2>
             <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-slate-100">
@@ -52,7 +52,7 @@ export default function CartDisplay() {
             </button>
           </div>
 
-          {/* Cart Items List: flex-1 takes up space, overflow-y-auto enables scrolling */}
+          {/* Cart Items List: Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-6 bg-white">
             
             {!isLoaded ? (
@@ -65,12 +65,11 @@ export default function CartDisplay() {
               /* Empty State */
               <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
             ) : (
-              /* THE LOOP - Fixed Layout */
+              /* THE LOOP - Final, Fixed Layout */
               cart.map(item => (
-                // Parent Container: Aligns items at the top and ensures a gap
-                <div key={item.id} className="flex items-start gap-4 border-b border-slate-200 pb-6 mb-6">
+                <div key={item.id} className="flex items-start gap-3 border-b border-slate-200 pb-6 mb-6">
                   
-                  {/* Image: Fixed size container w-16 h-16 */}
+                  {/* Column 1: Image (Fixed Width) */}
                   <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden border border-gray-200">
                     {item.image_url ? (
                         <img 
@@ -83,17 +82,16 @@ export default function CartDisplay() {
                     )}
                   </div>
                   
-                  {/* Item Details and Controls (Main Column) */}
-                  {/* Enforces a vertical stack, height 16, and distributes content vertically */}
-                  <div className="flex-grow min-w-0 pr-2 flex flex-col justify-between h-16"> 
+                  {/* Column 2: Item Details and Controls (Takes remaining space) */}
+                  <div className="flex-grow min-w-[100px] flex flex-col justify-between h-16"> 
                     
-                    {/* Top Row: Title & Unit Price */}
+                    {/* Title & Unit Price */}
                     <div>
                         <h3 className="font-semibold text-slate-900 text-sm mb-1 truncate">{item.name}</h3>
                         <p className="text-xs text-slate-500">Price: ₵{(item.price || 0).toFixed(2)}</p>
                     </div>
                     
-                    {/* Bottom Row: Quantity Controls */}
+                    {/* Quantity Controls: Now clearly visible */}
                     <div className="flex items-center gap-3">
                         <button 
                           onClick={() => removeFromCart(item.id)} 
@@ -113,7 +111,7 @@ export default function CartDisplay() {
                     </div>
                   </div>
                   
-                  {/* Item Total: Aligned Top Right and stays on one line */}
+                  {/* Column 3: Item Total (Fixed Width, aligns with top) */}
                   <div className="flex-shrink-0 pt-1"> 
                     <span className="font-bold text-slate-900 text-sm whitespace-nowrap">
                         ₵{((item.price || 0) * item.quantity).toFixed(2)}
@@ -124,7 +122,7 @@ export default function CartDisplay() {
             )}
           </div>
 
-          {/* Footer/Checkout */}
+          {/* Footer/Checkout (Unchanged) */}
           <div className="p-6 border-t bg-gray-50">
             <div className="flex justify-between items-center text-xl font-bold mb-4 text-slate-900">
               <span>Subtotal:</span>
