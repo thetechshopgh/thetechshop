@@ -16,6 +16,8 @@ export default function CartDisplay() {
     router.push('/checkout');
   };
 
+  console.log("Current Cart State:", cart);
+
   return (
     <>
       {/* Cart Icon Button */}
