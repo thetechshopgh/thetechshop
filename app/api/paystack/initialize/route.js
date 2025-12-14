@@ -33,13 +33,26 @@ export async function POST(req) {
         Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`, // Using the secure ENV variable
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+   // app/api/paystack/initialize/route.js
+
+// ... inside the POST function ...
+
+    const KNOWN_VALID_CALLBACK = 'https://thetechshop.vercel.app/api/paystack/callback';
+    
+    // Ensure you use your ACTUAL, currently deployed URL here
+    // Example: If your app is live at my-ghana-shop.com, use:
+    // const KNOWN_VALID_CALLBACK = 'https://my-ghana-shop.com/api/paystack/callback';
+
+
+    // ... inside the JSON.stringify body ...
+    body: JSON.stringify({
         email,
         amount: totalPesewas, 
-        currency: 'GHS', // Required for Ghana transactions
+        currency: 'GHS', 
         metadata, 
-        callback_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://thetechshop.vercel.app'}/api/paystack/callback`, 
+        callback_url: KNOWN_VALID_CALLBACK, // 🚨 USE THIS HARDCODED, SECURE URL 🚨
       }),
+// ...
     });
 
     // --- 3. Handle API Response ---
