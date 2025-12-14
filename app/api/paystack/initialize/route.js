@@ -1,77 +1,66 @@
-// app/api/paystack/initialize/route.js (MINIMAL REQUEST TEST)
-
+// app/api/paystack/initialize/route.js
 import { NextResponse } from 'next/server';
 
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { amount } = body; // Only need amount for this test
+    const { email, amount, metadata } = body;
 
-    if (!process.env.PAYSTACK_SECRET_KEY) {
-        throw new Error('Server authentication key is missing.');
-    }
-
-    const totalPesewas = Math.round(Number(amount) * 100);
-    const MINIMUM_AMOUNT_PESEWAS = 500; // 🚨 Set a high, safe amount for the test (e.g., ₵5.00 GHS)
-
-    if (isNaN(totalPesewas) || totalPesewas < MINIMUM_AMOUNT_PESEWAS) {
-        // Use the high safe amount for the test
-        const TEST_AMOUNT = MINIMUM_AMOUNT_PESEWAS; 
-        
-        const paystackUrl = 'https://api.paystack.co/transaction/initialize';
-
-        const res = await fetch(paystackUrl, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: 'thetechshopgh@gmail.com', // 🚨 KNOWN GOOD EMAIL
-                amount: TEST_AMOUNT,          // 🚨 HIGH TEST AMOUNT
-                currency: 'GHS',
-                // metadata and callback_url are GONE
-            }),
-        });
-        
-        const data = await res.json();
-        
-        if (!res.ok) {
-            console.error(`Paystack API Error Status: ${res.status}`, data);
-            throw new Error(data.message || `Payment initialization failed with status ${res.status}.`);
-        }
-
-        return NextResponse.json(data.data);
-    }
+    // --- 1. Validation and Amount Preparation ---
     
-    // If the cart total was above the test minimum, proceed with the original flow (with minimal fields)
+    // Safety check: Ensure the secret key is defined before using it
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+        console.error("CONFIGURATION ERROR: PAYSTACK_SECRET_KEY is missing or undefined.");
+        throw new Error('Server authentication key is missing. Cannot process payment.');
+    }
+
+    // Convert client-side amount (e.g., 12.50) to Pesewas (1250) and ensure it's a safe integer.
+    const totalPesewas = Math.round(Number(amount) * 100);
+    const MINIMUM_AMOUNT_PESEWAS = 50; // Minimum transaction amount (₵0.50 GHS)
+
+    // Validate the final calculated amount
+    if (isNaN(totalPesewas) || totalPesewas < MINIMUM_AMOUNT_PESEWAS) {
+        console.error(`Invalid payment amount: ${totalPesewas} pesewas.`);
+        throw new Error(`Payment amount must be at least ₵${(MINIMUM_AMOUNT_PESEWAS / 100).toFixed(2)}.`);
+    }
+
+    // Define the secure Callback URL
+    // Use the actual deployed Vercel URL for production (set as NEXT_PUBLIC_BASE_URL)
+    const CALLBACK_URL = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://thetechshop.vercel.app'}/api/paystack/callback`;
+    
     const paystackUrl = 'https://api.paystack.co/transaction/initialize';
 
+    // --- 2. Call Paystack API ---
     const res = await fetch(paystackUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`, // Uses secure ENV variable
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: 'testuser@example.com', // 🚨 KNOWN GOOD EMAIL
+        email,
         amount: totalPesewas, 
-        currency: 'GHS', 
-        // metadata and callback_url are GONE
+        currency: 'GHS', // Essential for GHS payments
+        metadata, 
+        callback_url: CALLBACK_URL, 
       }),
     });
 
-    const data = await res.json();
+    // --- 3. Handle API Response ---
+    const data = await res.json();
 
-    if (!res.ok) {
-        console.error(`Paystack API Error Status: ${res.status}`, data); 
-        throw new Error(data.message || `Payment initialization failed with status ${res.status}.`);
-    }
+    if (!res.ok) {
+        // Log the specific status and Paystack's error message for server diagnosis
+        console.error(`Paystack API Error Status: ${res.status}`, data); 
+        throw new Error(data.message || `Payment initialization failed with status ${res.status}.`);
+    }
 
-    return NextResponse.json(data.data);
+    // Success: Return the authorization URL to the client
+    return NextResponse.json(data.data);
     
   } catch (error) {
     console.error('Paystack Init Critical Error:', error.message);
+    // Return a generic 500 error to the client
     return NextResponse.json({ error: 'Payment initialization failed. Please try again later.' }, { status: 500 });
   }
 }
