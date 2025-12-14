@@ -48,10 +48,6 @@ export default function Store() {
             />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           </div>
-
-          <div className="flex items-center gap-4">
-            <CartDisplay />
-          </div>
         </div>
       </nav>
 
