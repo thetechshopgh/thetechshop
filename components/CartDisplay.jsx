@@ -16,23 +16,26 @@ export default function CartDisplay() {
 
   return (
     <>
-      {/* 1. Cart Icon Button (Unchanged) */}
+      {/* 1. Cart Icon Button: Moved to Floating Bottom Right */}
       <button 
         onClick={() => setIsOpen(true)}
-        className="relative p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition"
+        // 🚨 CRITICAL CHANGE: Added fixed positioning for floating button
+        className="fixed bottom-8 right-8 z-40 p-4 rounded-full bg-blue-600 hover:bg-blue-700 transition shadow-lg text-white"
         aria-label="View shopping cart"
       >
-        <ShoppingBag size={24} className="text-slate-700" />
+        {/* Replaced old icon styling with simpler white icon */}
+        <ShoppingBag size={28} className="text-white" />
+        
         {isLoaded && cartItemCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+          // Adjusted position and size for the new button style
+          <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white">
             {cartItemCount}
           </span>
         )}
       </button>
 
-      {/* 2. Cart Sidebar (Drawer) */}
+      {/* 2. Cart Sidebar (Drawer) (Unchanged since z-index fix) */}
       <div 
-        // 🚨 FINAL FIX: Increased z-index to z-[999] to guarantee stacking above the header
         className={`fixed inset-0 z-[999] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
         {/* Backdrop */}
@@ -127,6 +130,7 @@ export default function CartDisplay() {
             <button 
               onClick={handleCheckout} 
               disabled={!isLoaded || cart.length === 0}
+              // Used a blue gradient theme for consistency with the new cart button
               className="w-full py-4 rounded-xl text-white font-bold text-lg disabled:opacity-50 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition shadow-lg"
             >
               Proceed to Checkout
