@@ -11,6 +11,7 @@ export default function CartDisplay() {
 
   const handleCheckout = () => {
     setIsOpen(false);
+    // Assuming you have a /checkout page setup
     router.push('/checkout');
   };
 
@@ -40,7 +41,7 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* Sidebar Container */}
+        {/* Sidebar Container: flex-col ensures header and footer are separate from the scrollable list */}
         <div 
           className={`fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         >
@@ -52,22 +53,25 @@ export default function CartDisplay() {
             </button>
           </div>
 
-          {/* Cart Items List - FIXED HEIGHT AND OVERFLOW */}
+          {/* Cart Items List: flex-1 ensures it takes up available space and overflow-y-auto enables scrolling */}
           <div className="flex-1 overflow-y-auto p-6 bg-white">
             
             {!isLoaded ? (
+               /* Loading State */
                <div className="flex flex-col items-center justify-center h-40 text-slate-400">
                  <Loader2 className="animate-spin mb-2" size={32} />
                  <p>Loading...</p>
                </div>
             ) : cart.length === 0 ? (
+              /* Empty State */
               <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
             ) : (
-              /* THE LOOP */
+              /* THE LOOP - Fixed Layout */
               cart.map(item => (
                 <div key={item.id} className="flex items-start gap-4 border-b border-slate-200 pb-6 mb-6">
-                  {/* Image: Force explicit size to prevent collapse */}
-                  <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden border border-gray-200">
+                  
+                  {/* Image: Fixed size container w-16 h-16 */}
+                  <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden border border-gray-200">
                     {item.image_url ? (
                         <img 
                             src={item.image_url} 
@@ -75,19 +79,21 @@ export default function CartDisplay() {
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">No Img</div>
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
                     )}
                   </div>
                   
-                  {/* Item Details */}
-                  <div className="flex-grow min-w-0">
+                  {/* Item Details: min-w-0 for flex truncation and pr-2 for spacing from price */}
+                  <div className="flex-grow min-w-0 pr-2"> 
                     <h3 className="font-semibold text-slate-900 text-sm mb-1 truncate">{item.name}</h3>
                     <p className="text-sm text-slate-500 mb-2">₵{(item.price || 0).toFixed(2)}</p>
                     
+                    {/* Controls */}
                     <div className="flex items-center gap-3">
                         <button 
                           onClick={() => removeFromCart(item.id)} 
                           className="text-slate-500 hover:text-red-500 transition"
+                          aria-label={`Remove one ${item.name}`}
                         >
                           <MinusCircle size={20} />
                         </button>
@@ -95,15 +101,16 @@ export default function CartDisplay() {
                         <button 
                           onClick={() => addToCart(item)} 
                           className="text-slate-500 hover:text-green-500 transition"
+                          aria-label={`Add one ${item.name}`}
                         >
                           <PlusCircle size={20} />
                         </button>
                     </div>
                   </div>
                   
-                  {/* Item Total */}
-                  <div className="flex-shrink-0">
-                    <span className="font-bold text-slate-900 text-sm">
+                  {/* Item Total: flex-shrink-0 and pt-1 for alignment */}
+                  <div className="flex-shrink-0 pt-1"> 
+                    <span className="font-bold text-slate-900 text-sm whitespace-nowrap">
                         ₵{((item.price || 0) * item.quantity).toFixed(2)}
                     </span>
                   </div>
