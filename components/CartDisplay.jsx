@@ -40,9 +40,8 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* 🚨 REVERTED WIDTH FIX: Using w-96 (384px) Tailwind class only */}
+        {/* Sidebar Container: Reverted to standard w-96 positioning */}
         <div 
-          // Reverted to fixed position with simple w-96 class
           className={`fixed right-0 top-0 bottom-0 w-96 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
           
@@ -67,7 +66,7 @@ export default function CartDisplay() {
               /* Empty State */
               <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
             ) : (
-              /* THE LOOP - Stable Grid Layout (This layout should render the items) */
+              /* THE LOOP - Stable Grid Layout */
               cart.map(item => (
                 <div key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-2 items-center border-b border-slate-200 py-3 px-4">
                   
@@ -84,14 +83,10 @@ export default function CartDisplay() {
                     )}
                   </div>
                   
-                  {/* Column 2: Item Details and Controls (1fr - Fills remaining width) */}
+                  {/* Column 2: Item Details and Controls (1fr) */}
                   <div className="flex flex-col justify-center overflow-hidden"> 
-                    
-                    {/* Title & Unit Price */}
                     <h3 className="font-semibold text-slate-900 text-sm mb-1 truncate">{item.name}</h3>
                     <p className="text-xs text-slate-500 mb-2">Price: ₵{(item.price || 0).toFixed(2)}</p>
-                    
-                    {/* Quantity Controls */}
                     <div className="flex items-center gap-3">
                         <button 
                           onClick={() => removeFromCart(item.id)} 
@@ -111,7 +106,7 @@ export default function CartDisplay() {
                     </div>
                   </div>
                   
-                  {/* Column 3: Item Total (Auto-width, right aligned) */}
+                  {/* Column 3: Item Total (Auto-width) */}
                   <div className="text-right"> 
                     <span className="font-bold text-slate-900 text-sm whitespace-nowrap">
                         ₵{((item.price || 0) * item.quantity).toFixed(2)}
