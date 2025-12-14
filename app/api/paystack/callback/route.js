@@ -4,7 +4,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 // 🛑 REMINDER: Ensure you have replaced this with your actual admin email!
-const ADMIN_EMAIL = 'YOUR_ADMIN_EMAIL@example.com'; 
+const ADMIN_EMAIL = 'thetechshopgh@gmail.com'; 
 
 // --- Core Verification and Fulfillment Logic ---
 async function handlePaystackFulfillment(reference) {
