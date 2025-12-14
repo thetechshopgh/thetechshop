@@ -1,6 +1,6 @@
 // components/CartDisplay.jsx (FINAL FIX: Comment Removal)
 'use client'
-import { useCart } from '@/components/CartContext';
+import { useCart } from './components/CartContext';
 import { ShoppingBag, X, MinusCircle, PlusCircle } from 'lucide-react'; 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
