@@ -1,4 +1,3 @@
-// app/api/paystack/initialize/route.js
 import { NextResponse } from 'next/server';
 
 export async function POST(req) {
@@ -6,26 +5,34 @@ export async function POST(req) {
     const body = await req.json();
     const { email, amount, metadata } = body;
 
-    // --- 1. Validation and Amount Preparation ---
+    // --- 1. Validation and Data Sanitization (CRITICAL) ---
     
-    // Safety check: Ensure the secret key is defined before using it
     if (!process.env.PAYSTACK_SECRET_KEY) {
-        console.error("CONFIGURATION ERROR: PAYSTACK_SECRET_KEY is missing or undefined.");
-        throw new Error('Server authentication key is missing. Cannot process payment.');
+        console.error("CONFIGURATION ERROR: PAYSTACK_SECRET_KEY is missing.");
+        throw new Error('Server authentication key is missing.');
     }
 
-    // Convert client-side amount (e.g., 12.50) to Pesewas (1250) and ensure it's a safe integer.
-    const totalPesewas = Math.round(Number(amount) * 100);
-    const MINIMUM_AMOUNT_PESEWAS = 50; // Minimum transaction amount (₵0.50 GHS)
+    // 🚨 Sanitizing Email: Use a fallback if the client sends a blank or invalid email
+    const safeEmail = email && String(email).trim().includes('@') 
+        ? String(email).trim() 
+        : 'customer@example.com'; // Use a generic, valid fallback email
+        
+    // Sanitizing Metadata: Only include safe string properties or keep it minimal
+    const safeMetadata = metadata ? { 
+        custom_fields: metadata.custom_fields,
+        order_reference: metadata.order_reference,
+        // Avoid sending the full 'cartItems' object if it's large or complex
+    } : {};
 
-    // Validate the final calculated amount
+    // Amount Processing
+    const totalPesewas = Math.round(Number(amount) * 100);
+    const MINIMUM_AMOUNT_PESEWAS = 50; 
+
     if (isNaN(totalPesewas) || totalPesewas < MINIMUM_AMOUNT_PESEWAS) {
-        console.error(`Invalid payment amount: ${totalPesewas} pesewas.`);
         throw new Error(`Payment amount must be at least ₵${(MINIMUM_AMOUNT_PESEWAS / 100).toFixed(2)}.`);
     }
 
     // Define the secure Callback URL
-    // Use the actual deployed Vercel URL for production (set as NEXT_PUBLIC_BASE_URL)
     const CALLBACK_URL = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://thetechshop.vercel.app'}/api/paystack/callback`;
     
     const paystackUrl = 'https://api.paystack.co/transaction/initialize';
@@ -34,14 +41,14 @@ export async function POST(req) {
     const res = await fetch(paystackUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`, // Uses secure ENV variable
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email,
+        email: safeEmail, // Using the sanitized email
         amount: totalPesewas, 
-        currency: 'GHS', // Essential for GHS payments
-        metadata, 
+        currency: 'GHS', 
+        metadata: safeMetadata, // Using the sanitized metadata
         callback_url: CALLBACK_URL, 
       }),
     });
@@ -50,17 +57,14 @@ export async function POST(req) {
     const data = await res.json();
 
     if (!res.ok) {
-        // Log the specific status and Paystack's error message for server diagnosis
-        console.error(`Paystack API Error Status: ${res.status}`, data); 
+        console.error(`Paystack API Error Status: ${res.status}`, data); 
         throw new Error(data.message || `Payment initialization failed with status ${res.status}.`);
     }
 
-    // Success: Return the authorization URL to the client
     return NextResponse.json(data.data);
     
   } catch (error) {
     console.error('Paystack Init Critical Error:', error.message);
-    // Return a generic 500 error to the client
     return NextResponse.json({ error: 'Payment initialization failed. Please try again later.' }, { status: 500 });
   }
 }
