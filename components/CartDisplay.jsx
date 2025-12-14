@@ -45,7 +45,7 @@ export default function CartDisplay() {
           className={`fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
           
-          {/* Header: Reduced horizontal padding to p-4 (px-4) */}
+          {/* Header: Reduced to minimum px-4 padding */}
           <div className="flex justify-between items-center px-4 py-4 border-b">
             <h2 className="text-2xl font-bold text-slate-900">Your Cart</h2>
             <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-slate-100">
@@ -53,8 +53,8 @@ export default function CartDisplay() {
             </button>
           </div>
 
-          {/* Cart Items List: Reduced horizontal padding to px-4 */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 bg-white">
+          {/* Cart Items List: Removed all external padding (p-0) */}
+          <div className="flex-1 overflow-y-auto p-0 bg-white">
             
             {!isLoaded ? (
                /* Loading State */
@@ -68,8 +68,8 @@ export default function CartDisplay() {
             ) : (
               /* THE LOOP - ABSOLUTE COLUMN CONTROL (Grid) */
               cart.map(item => (
-                // 🚨 CRITICAL FIX: Grid Template adjusted: 64px | minmax(0, 1fr) | auto. Gap reduced to 3.
-                <div key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-3 items-center border-b border-slate-200 pb-4 mb-4">
+                // Inner padding removed (p-0) and gap reduced (gap-2)
+                <div key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-2 items-center border-b border-slate-200 py-3 px-4">
                   
                   {/* Column 1: Image (Fixed 64px) */}
                   <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden border border-gray-200">
@@ -84,7 +84,7 @@ export default function CartDisplay() {
                     )}
                   </div>
                   
-                  {/* Column 2: Item Details and Controls (1fr - Takes all remaining space) */}
+                  {/* Column 2: Item Details and Controls (1fr - Fills remaining width) */}
                   <div className="flex flex-col justify-center overflow-hidden"> 
                     
                     {/* Title & Unit Price */}
@@ -122,7 +122,7 @@ export default function CartDisplay() {
             )}
           </div>
 
-          {/* Footer/Checkout: Reduced horizontal padding to px-4 */}
+          {/* Footer/Checkout: Reduced to minimum px-4 padding */}
           <div className="px-4 py-4 border-t bg-gray-50">
             <div className="flex justify-between items-center text-xl font-bold mb-4 text-slate-900">
               <span>Subtotal:</span>
