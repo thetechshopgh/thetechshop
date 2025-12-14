@@ -40,10 +40,10 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* 🚨 CRITICAL FIX: Sidebar Container with Fixed Width */}
+        {/* 🚨 THE NUCLEAR FIX: Sidebar Container with Inline Style Fixed Width (384px) */}
         <div 
-          // Replaced max-w-sm with fixed width (w-96 is 384px) and added !w-96 to force override.
-          className={`fixed right-0 top-0 bottom-0 w-96 !w-96 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
+          style={{ width: '384px' }} // ⬅️ THIS IS THE INLINE STYLE OVERRIDE
+          className={`fixed right-0 top-0 bottom-0 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
           
           {/* Header: Reduced to minimum px-4 padding */}
