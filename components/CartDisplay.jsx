@@ -42,8 +42,8 @@ export default function CartDisplay() {
 
         {/* Sidebar Container */}
         <div 
-          // 🚨 FIX 1: Increased max-w to md (448px) for more room and added overflow-x-hidden
-          className={`fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
+          // 🚨 CRITICAL FIX: Increased max-w to lg (512px) for ample space
+          className={`fixed right-0 top-0 bottom-0 w-full max-w-lg bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
           {/* Header (Unchanged) */}
           <div className="flex justify-between items-center p-6 border-b">
@@ -66,9 +66,9 @@ export default function CartDisplay() {
               /* Empty State */
               <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
             ) : (
-              /* THE LOOP - Fixed Layout */
+              /* THE LOOP - Fixed Layout with increased container width */
               cart.map(item => (
-                <div key={item.id} className="flex items-start gap-3 border-b border-slate-200 pb-6 mb-6">
+                <div key={item.id} className="flex items-start gap-4 border-b border-slate-200 pb-6 mb-6">
                   
                   {/* Column 1: Image (Fixed Width 16) */}
                   <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden border border-gray-200">
@@ -83,8 +83,8 @@ export default function CartDisplay() {
                     )}
                   </div>
                   
-                  {/* Column 2: Item Details and Controls (Takes remaining space) */}
-                  <div className="flex-grow min-w-[100px] flex flex-col justify-between h-16"> 
+                  {/* Column 2: Item Details and Controls (Takes remaining space, removed min-w) */}
+                  <div className="flex-grow flex flex-col justify-between h-16 pr-2"> 
                     
                     {/* Title & Unit Price */}
                     <div>
@@ -112,7 +112,7 @@ export default function CartDisplay() {
                     </div>
                   </div>
                   
-                  {/* Column 3: Item Total (Fixed Width, aligns with top) */}
+                  {/* Column 3: Item Total (Aligned Top Right) */}
                   <div className="flex-shrink-0 pt-1"> 
                     <span className="font-bold text-slate-900 text-sm whitespace-nowrap">
                         ₵{((item.price || 0) * item.quantity).toFixed(2)}
