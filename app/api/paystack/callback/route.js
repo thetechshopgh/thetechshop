@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase'; // 🚨 Ensure this uses the SUPABASE_SERVICE_KEY 🚨
+// 🚨 IMPORTANT: Ensure this supabase client uses the Service Role Key 🚨
+// This is necessary for secure, server-side updates without RLS limitations.
+import { supabase } from '@/lib/supabase'; 
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -11,7 +13,13 @@ async function handlePaystackFulfillment(reference) {
     let customerEmail = 'no-email-found@example.com';
     let totalAmount = '0.00';
     let orderUUID = null;
-    let customerDetails = { cartItems: [] }; // Initialize to prevent crashes
+    let customerDetails = { 
+        fullName: 'N/A', 
+        phoneNumber: 'N/A', 
+        digitalAddress: 'N/A', 
+        deliveryAddress: 'N/A', 
+        cartItems: [] 
+    }; // Default fallbacks for email in case of failure
 
     // 1. Verify Transaction with Paystack
     const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
@@ -26,48 +34,49 @@ async function handlePaystackFulfillment(reference) {
     
     const { amount, metadata } = verifyData.data;
 
-    // 🚨 NEW: Retrieve the UUID saved from the client's initial save 🚨
+    // 🚨 Extract the UUID passed in the initializer metadata 🚨
     orderUUID = metadata?.order_uuid; 
     totalAmount = (amount / 100).toFixed(2);
     
-    if (!orderUUID) {
-        console.error("CRITICAL: Missing order_uuid in verified Paystack metadata.");
-        return { success: false, message: "Order ID missing for fulfillment." };
-    }
-
     // --- 2. Update and Retrieve Full Order Details from Supabase ---
     try {
-        // Find the PENDING order by its UUID and update its status and reference
-        const { data: updatedOrder, error: dbError } = await supabase
-            .from('orders')
-            .update({ 
-                status: 'paid', 
-                reference: reference // Save the Paystack reference
-            })
-            .eq('order_uuid', orderUUID) // Find the row created earlier
-            .select() 
-            .single();
+        if (orderUUID) {
+            // Find the PENDING order by its UUID and update its status and reference
+            const { data: updatedOrder, error: dbError } = await supabase
+                .from('orders')
+                .update({ 
+                    status: 'paid', 
+                    reference: reference // Save the Paystack reference
+                })
+                .eq('order_uuid', orderUUID) // Find the row created earlier
+                .select() 
+                .single();
 
-        if (dbError) {
-            console.error("CRITICAL SUPABASE DB UPDATE ERROR:", dbError);
-            dbSuccess = false; 
-        } else if (updatedOrder) {
-            dbSuccess = true; 
+            if (dbError) {
+                console.error("CRITICAL SUPABASE DB UPDATE ERROR:", dbError);
+                console.error("Supabase Error Code:", dbError.code); // Log error code for debugging
+                dbSuccess = false; 
+            } else if (updatedOrder) {
+                dbSuccess = true; 
 
-            // Extract ALL details from the successfully UPDATED row for email
-            customerEmail = updatedOrder.customer_email;
-            customerDetails = {
-                fullName: updatedOrder.full_name,
-                phoneNumber: updatedOrder.phone_number,
-                digitalAddress: updatedOrder.digital_address,
-                deliveryAddress: updatedOrder.delivery_address,
-                // Parse the JSON string back into a JavaScript object for the email map
-                cartItems: JSON.parse(updatedOrder.order_items_json), 
-            };
+                // Extract ALL details from the successfully UPDATED row for email
+                customerEmail = updatedOrder.customer_email;
+                customerDetails = {
+                    fullName: updatedOrder.full_name,
+                    phoneNumber: updatedOrder.phone_number,
+                    digitalAddress: updatedOrder.digital_address,
+                    deliveryAddress: updatedOrder.delivery_address,
+                    // Parse the JSON string back into a JavaScript object for the email map
+                    cartItems: JSON.parse(updatedOrder.order_items_json), 
+                };
+            } else {
+                 // No rows were updated. (e.g., UUID mismatch or already paid)
+                 console.warn(`Order UUID ${orderUUID} did not result in an update. Row not found or already processed.`);
+                 dbSuccess = false; 
+            }
         } else {
-             // Handle case where order_uuid was valid but no row was updated (e.g., already paid)
-             console.log(`Order ${orderUUID} not found or already processed. Skipping update.`);
-             dbSuccess = false; 
+            console.error("Fulfillment skipped: order_uuid was missing from Paystack metadata.");
+            // We still proceed to send email with default N/A data to notify admin
         }
 
     } catch (dbException) {
@@ -76,13 +85,14 @@ async function handlePaystackFulfillment(reference) {
     }
 
     // --- 3. Send Email Notifications (Guaranteeing Delivery) ---
-    // Note: Email logic runs regardless of DB update success to notify admin/customer
+    // Email logic uses customerDetails, which will contain real data if dbSuccess is true,
+    // or default 'N/A' data if the DB update failed (not ideal, but safer than crashing).
     
     const itemsHtml = customerDetails.cartItems.map(item => 
         `<li>${item.name} (x${item.quantity}) - Price: ₵${(item.price || 0).toFixed(2)} each</li>`
     ).join('');
 
-    const adminSubjectPrefix = dbSuccess ? 'NEW ORDER RECEIVED:' : 'URGENT: DB FAILURE - ORDER RECEIVED:';
+    const adminSubjectPrefix = dbSuccess ? 'NEW ORDER RECEIVED (DB OK):' : 'URGENT: DB FAILURE - ORDER RECEIVED:';
 
     const emailHtml = `
       <h2 style="color: #10b981;">New Order Alert: #${reference}</h2>
@@ -128,6 +138,7 @@ async function handlePaystackFulfillment(reference) {
         console.error("Resend Email Error: Failed to send notifications.", emailError);
     }
 
+    // We return success here as the payment itself was successful.
     return { success: true, message: "Fulfillment completed." };
 }
 
@@ -143,8 +154,7 @@ export async function GET(req) {
     }
 
     try {
-        // Note: The result.success here just means the verification worked.
-        // DB success is handled internally, but we still redirect to thank you.
+        // Run the fulfillment logic
         await handlePaystackFulfillment(reference);
 
         // Always redirect to success page if Paystack verification succeeded
@@ -161,11 +171,13 @@ export async function GET(req) {
 // ------------------------------------------------------------------
 export async function POST(req) {
     try {
+        // NOTE: In production, ALWAYS verify the 'x-paystack-signature' header here
         const body = await req.json();
         
         if (body.event === 'charge.success') {
             const reference = body.data.reference;
             
+            // Run the fulfillment logic
             await handlePaystackFulfillment(reference);
             
             // Webhook must always return 200
