@@ -1,6 +1,7 @@
-// app/layout.js (UPDATED)
+// app/layout.js (FINAL STRUCTURAL FIX)
 import './globals.css';
-import { CartProvider } from '../components/CartContext'; // Adjust path as needed
+import { CartProvider } from '../components/CartContext';
+import CartDisplay from '../components/CartDisplay'; // 🚨 NEW IMPORT
 
 // Metadata is optional but good practice
 export const metadata = {
@@ -12,9 +13,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        {/* WRAP CHILDREN IN THE CART PROVIDER */}
-        <CartProvider> 
-            {children}
+        <CartProvider>
+
+          <CartDisplay />
+          
+          {children}
+          
         </CartProvider>
       </body>
     </html>
