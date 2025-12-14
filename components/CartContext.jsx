@@ -1,44 +1,50 @@
-// components/CartContext.jsx (FINAL VERIFIED VERSION)
+// components/CartContext.jsx (ULTIMATE FIX: Consolidated State Loading)
 'use client'
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useMemo } from 'react';
 
 const CartContext = createContext();
 
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
+  // Initialize cart state as an empty array
   const [cart, setCart] = useState([]);
 
-  // 1. Load cart from Local Storage on mount
+  // 1. Load cart from Local Storage ONLY on mount
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem('tech_retail_cart');
       if (savedCart) {
-        // Attempt to parse, reset to empty array if data is corrupt
         setCart(JSON.parse(savedCart));
       }
     } catch (error) {
       console.error("Could not load cart from storage:", error);
-      setCart([]); // Reset cart if parsing fails
+      setCart([]); // Ensure it falls back to an empty array on error
     }
-  }, []);
+  }, []); // Empty dependency array means it runs once on mount
 
-  // 2. Save cart to Local Storage whenever it changes
+  // 2. Save cart to Local Storage whenever cart state changes
   useEffect(() => {
     localStorage.setItem('tech_retail_cart', JSON.stringify(cart));
+  }, [cart]); // Only runs when cart state changes
+
+  // 3. Calculated values using useMemo to optimize performance
+  const { cartTotal, cartItemCount } = useMemo(() => {
+    const total = cart.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
+    const count = cart.reduce((acc, item) => acc + item.quantity, 0);
+    return { cartTotal: total, cartItemCount: count };
   }, [cart]);
+
 
   const addToCart = (product) => {
     setCart((currentCart) => {
       const existingItem = currentCart.find(item => item.id === product.id);
 
       if (existingItem) {
-        // If product already exists, increase quantity
         return currentCart.map(item =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       } else {
-        // Otherwise, add new item
         return [...currentCart, { ...product, quantity: 1 }];
       }
     });
@@ -49,28 +55,24 @@ export const CartProvider = ({ children }) => {
       return currentCart
         .map(item => {
           if (item.id === productId) {
-            // Decrease the quantity by 1
             return { ...item, quantity: item.quantity - 1 };
           }
           return item;
         })
-        // Filter out the item if its quantity is now 0 or less
         .filter(item => item.quantity > 0);
     });
   };
 
   const clearCart = () => setCart([]);
 
-  // Use a safety check (|| 0) for cartTotal calculation
-  const cartTotal = cart.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
-
   return (
     <CartContext.Provider value={{ 
         cart, 
         addToCart, 
-        removeFromCart, // 🚨 CRITICAL: Exported
+        removeFromCart,
         clearCart, 
-        cartTotal 
+        cartTotal,         // Export calculated total
+        cartItemCount     // Export calculated count
     }}>
       {children}
     </CartContext.Provider>
