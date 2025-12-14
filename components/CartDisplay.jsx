@@ -62,7 +62,6 @@ export default function CartDisplay() {
               <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
             ) : (
               cart.map(item => (
-                {/* 🛑 REVISED ITEM STRUCTURE: Added flex-col and responsive layout for controls and price */}
                 <div key={item.id} className="flex items-start gap-4 border-b pb-4">
                   <div className="w-16 h-16 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
                     {/* Product image */}
