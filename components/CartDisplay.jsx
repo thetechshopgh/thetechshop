@@ -14,6 +14,9 @@ export default function CartDisplay() {
     router.push('/checkout');
   };
 
+  // Define the fixed sidebar width
+  const sidebarWidth = '384px'; // w-96
+
   return (
     <>
       {/* 1. Cart Icon Button (Unchanged) */}
@@ -40,10 +43,15 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* 🚨 THE NUCLEAR FIX: Sidebar Container with Inline Style Fixed Width (384px) */}
+        {/* 🚨 THE TRUE FIXED-WIDTH OVERRIDE: Using calc() for guaranteed width */}
         <div 
-          style={{ width: '384px' }} // ⬅️ THIS IS THE INLINE STYLE OVERRIDE
-          className={`fixed right-0 top-0 bottom-0 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
+          style={{ 
+            width: sidebarWidth, // Explicitly set width to 384px
+            // Start the sidebar at the correct position using CSS calc()
+            left: `calc(100% - ${sidebarWidth})`, 
+            transform: isOpen ? 'translateX(0)' : 'translateX(384px)' // Match transition to width
+          }}
+          className={`fixed right-0 top-0 bottom-0 bg-white shadow-2xl transition-transform duration-300 flex flex-col overflow-x-hidden`}
         >
           
           {/* Header: Reduced to minimum px-4 padding */}
