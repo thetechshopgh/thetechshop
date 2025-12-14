@@ -14,9 +14,6 @@ export default function CartDisplay() {
     router.push('/checkout');
   };
 
-  // Define the fixed sidebar width
-  const sidebarWidth = '384px'; // w-96
-
   return (
     <>
       {/* 1. Cart Icon Button (Unchanged) */}
@@ -43,18 +40,13 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* 🚨 THE TRUE FIXED-WIDTH OVERRIDE: Using calc() for guaranteed width */}
+        {/* 🚨 REVERTED WIDTH FIX: Using w-96 (384px) Tailwind class only */}
         <div 
-          style={{ 
-            width: sidebarWidth, // Explicitly set width to 384px
-            // Start the sidebar at the correct position using CSS calc()
-            left: `calc(100% - ${sidebarWidth})`, 
-            transform: isOpen ? 'translateX(0)' : 'translateX(384px)' // Match transition to width
-          }}
-          className={`fixed right-0 top-0 bottom-0 bg-white shadow-2xl transition-transform duration-300 flex flex-col overflow-x-hidden`}
+          // Reverted to fixed position with simple w-96 class
+          className={`fixed right-0 top-0 bottom-0 w-96 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
           
-          {/* Header: Reduced to minimum px-4 padding */}
+          {/* Header: Fixed px-4 padding */}
           <div className="flex justify-between items-center px-4 py-4 border-b">
             <h2 className="text-2xl font-bold text-slate-900">Your Cart</h2>
             <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-slate-100">
@@ -62,7 +54,7 @@ export default function CartDisplay() {
             </button>
           </div>
 
-          {/* Cart Items List: Removed all external padding (p-0) */}
+          {/* Cart Items List: p-0 padding */}
           <div className="flex-1 overflow-y-auto p-0 bg-white">
             
             {!isLoaded ? (
@@ -75,9 +67,8 @@ export default function CartDisplay() {
               /* Empty State */
               <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
             ) : (
-              /* THE LOOP - ABSOLUTE COLUMN CONTROL (Grid) */
+              /* THE LOOP - Stable Grid Layout (This layout should render the items) */
               cart.map(item => (
-                // Inner padding applied here with gap-2
                 <div key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-2 items-center border-b border-slate-200 py-3 px-4">
                   
                   {/* Column 1: Image (Fixed 64px) */}
