@@ -5,72 +5,56 @@ export async function POST(req) {
     const body = await req.json();
     const { email, amount, metadata } = body;
 
-    // --- 1. Validation and Amount Preparation (CRITICAL FIX AREA) ---
+    // --- 1. Validation and Amount Preparation (Final Logic) ---
     
-    // Check Secret Key (Production safety check)
     if (!process.env.PAYSTACK_SECRET_KEY) {
         console.error("ENVIRONMENT ERROR: PAYSTACK_SECRET_KEY is missing.");
         throw new Error('Server authentication key is missing.');
     }
 
-    // Convert client-side amount (e.g., 12.50) to Pesewas (1250) and ensure it's a safe integer.
+    // Convert client-side amount (e.g., 12.50) to Pesewas (1250)
     const totalPesewas = Math.round(Number(amount) * 100);
-    const MINIMUM_AMOUNT_PESEWAS = 50; // Minimum transaction amount (₵0.50 GHS)
+    const MINIMUM_AMOUNT_PESEWAS = 50; // ₵0.50 GHS
 
-    // Validate the final calculated amount
     if (isNaN(totalPesewas) || totalPesewas < MINIMUM_AMOUNT_PESEWAS) {
-        console.error(`Invalid payment amount: ${totalPesewas} pesewas.`);
-        // Note: The client-side should prevent this, but this is a server defense.
         throw new Error(`Payment amount must be at least ₵${(MINIMUM_AMOUNT_PESEWAS / 100).toFixed(2)}.`);
     }
+
+    // --- 2. Define Callback URL ---
+    // Use the secure base URL for redirecting after payment.
+    // The fallback URL is necessary for Vercel builds if the ENV var is missing.
+    const CALLBACK_URL = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://thetechshop.vercel.app'}/api/paystack/callback`;
     
     const paystackUrl = 'https://api.paystack.co/transaction/initialize';
 
-    // --- 2. Call Paystack API ---
+    // --- 3. Call Paystack API ---
     const res = await fetch(paystackUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`, // Using the secure ENV variable
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
         'Content-Type': 'application/json',
       },
-   // app/api/paystack/initialize/route.js
-
-// ... inside the POST function ...
-
-    const KNOWN_VALID_CALLBACK = 'https://thetechshop.vercel.app/api/paystack/callback';
-    
-    // Ensure you use your ACTUAL, currently deployed URL here
-    // Example: If your app is live at my-ghana-shop.com, use:
-    // const KNOWN_VALID_CALLBACK = 'https://my-ghana-shop.com/api/paystack/callback';
-
-
-    // ... inside the JSON.stringify body ...
-    body: JSON.stringify({
+      body: JSON.stringify({
         email,
         amount: totalPesewas, 
-        currency: 'GHS', 
+        currency: 'GHS', // Ensures GHS is used
         metadata, 
-        callback_url: KNOWN_VALID_CALLBACK, // 🚨 USE THIS HARDCODED, SECURE URL 🚨
+        callback_url: CALLBACK_URL, // Using the resolved, secure callback URL
       }),
-// ...
     });
 
-    // --- 3. Handle API Response ---
+    // --- 4. Handle API Response ---
     const data = await res.json();
 
     if (!res.ok) {
-        // Log the exact status code and Paystack's error message
-        console.error(`Paystack API Error Status: ${res.status}`, data); 
-        // Return a slightly more helpful error to the client
+        console.error(`Paystack API Error Status: ${res.status}`, data); 
         throw new Error(data.message || `Payment initialization failed with status ${res.status}.`);
     }
 
-    // Success: Return the authorization URL to the client
     return NextResponse.json(data.data);
     
   } catch (error) {
     console.error('Paystack Init Critical Error:', error.message);
-    // Return a generic 500 error to the client for security
     return NextResponse.json({ error: 'Payment initialization failed. Please try again later.' }, { status: 500 });
   }
 }
