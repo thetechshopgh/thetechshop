@@ -1,13 +1,13 @@
-// components/CartDisplay.jsx (FIXED: Showing Items and Controls)
+// components/CartDisplay.jsx (FIXED: Syntax Error on line 65)
 'use client'
 import { useCart } from '@/components/CartContext';
-// 🛑 Imported MinusCircle and PlusCircle for quantity controls
+// Imported MinusCircle and PlusCircle for quantity controls
 import { ShoppingBag, X, MinusCircle, PlusCircle } from 'lucide-react'; 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function CartDisplay() {
-  // 🛑 MODIFIED: Destructure all necessary functions
+  // Destructure all necessary functions
   const { cart, cartTotal, addToCart, removeFromCart } = useCart(); 
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -73,7 +73,7 @@ export default function CartDisplay() {
                     <h3 className="font-semibold text-slate-900">{item.name}</h3>
                     <span className="text-sm text-slate-500 mb-2">₵{item.price.toFixed(2)} each</span>
                     
-                    {/* 🛑 Quantity Controls */}
+                    {/* Quantity Controls */}
                     <div className="flex items-center space-x-2">
                         {/* Remove/Decrease Quantity */}
                         <button 
