@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 // 🚨 IMPORTANT: Ensure this supabase client uses the Service Role Key 🚨
-// This is necessary for secure, server-side updates without RLS limitations.
+// This is critical for secure, server-side updates that bypass RLS.
 import { supabase } from '@/lib/supabase'; 
 import { Resend } from 'resend';
 
@@ -19,7 +19,7 @@ async function handlePaystackFulfillment(reference) {
         digitalAddress: 'N/A', 
         deliveryAddress: 'N/A', 
         cartItems: [] 
-    }; // Default fallbacks for email in case of failure
+    }; // Default fallbacks
 
     // 1. Verify Transaction with Paystack
     const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
@@ -34,7 +34,7 @@ async function handlePaystackFulfillment(reference) {
     
     const { amount, metadata } = verifyData.data;
 
-    // 🚨 Extract the UUID passed in the initializer metadata 🚨
+    // Extract the UUID passed in the initializer metadata
     orderUUID = metadata?.order_uuid; 
     totalAmount = (amount / 100).toFixed(2);
     
@@ -46,15 +46,15 @@ async function handlePaystackFulfillment(reference) {
                 .from('orders')
                 .update({ 
                     status: 'paid', 
-                    reference: reference // Save the Paystack reference
+                    reference: reference 
                 })
-                .eq('order_uuid', orderUUID) // Find the row created earlier
+                .eq('order_uuid', orderUUID) 
                 .select() 
                 .single();
 
             if (dbError) {
                 console.error("CRITICAL SUPABASE DB UPDATE ERROR:", dbError);
-                console.error("Supabase Error Code:", dbError.code); // Log error code for debugging
+                console.error("Supabase Error Code:", dbError.code);
                 dbSuccess = false; 
             } else if (updatedOrder) {
                 dbSuccess = true; 
@@ -66,17 +66,15 @@ async function handlePaystackFulfillment(reference) {
                     phoneNumber: updatedOrder.phone_number,
                     digitalAddress: updatedOrder.digital_address,
                     deliveryAddress: updatedOrder.delivery_address,
-                    // Parse the JSON string back into a JavaScript object for the email map
-                    cartItems: JSON.parse(updatedOrder.order_items_json), 
+                    // FIX: jsonb columns return native JS objects, so no JSON.parse() needed
+                    cartItems: updatedOrder.order_items_json, 
                 };
             } else {
-                 // No rows were updated. (e.g., UUID mismatch or already paid)
                  console.warn(`Order UUID ${orderUUID} did not result in an update. Row not found or already processed.`);
                  dbSuccess = false; 
             }
         } else {
             console.error("Fulfillment skipped: order_uuid was missing from Paystack metadata.");
-            // We still proceed to send email with default N/A data to notify admin
         }
 
     } catch (dbException) {
@@ -85,9 +83,8 @@ async function handlePaystackFulfillment(reference) {
     }
 
     // --- 3. Send Email Notifications (Guaranteeing Delivery) ---
-    // Email logic uses customerDetails, which will contain real data if dbSuccess is true,
-    // or default 'N/A' data if the DB update failed (not ideal, but safer than crashing).
     
+    // itemsHtml map is correct because customerDetails.cartItems is a native JS array
     const itemsHtml = customerDetails.cartItems.map(item => 
         `<li>${item.name} (x${item.quantity}) - Price: ₵${(item.price || 0).toFixed(2)} each</li>`
     ).join('');
@@ -138,12 +135,13 @@ async function handlePaystackFulfillment(reference) {
         console.error("Resend Email Error: Failed to send notifications.", emailError);
     }
 
-    // We return success here as the payment itself was successful.
+    // Return success as the payment itself was successful.
     return { success: true, message: "Fulfillment completed." };
 }
 
 // ------------------------------------------------------------------
 // 🚨 HTTP GET Handler (Customer Redirect) 🚨
+// This handles the user's browser redirection after successful payment.
 // ------------------------------------------------------------------
 export async function GET(req) {
     const url = new URL(req.url);
@@ -154,10 +152,9 @@ export async function GET(req) {
     }
 
     try {
-        // Run the fulfillment logic
         await handlePaystackFulfillment(reference);
 
-        // Always redirect to success page if Paystack verification succeeded
+        // Redirect to success page
         return NextResponse.redirect(new URL(`/thank-you?reference=${reference}`, url));
 
     } catch (error) {
@@ -168,19 +165,19 @@ export async function GET(req) {
 
 // ------------------------------------------------------------------
 // 🚨 HTTP POST Handler (Paystack Webhook) 🚨
+// This handles the server-to-server notification from Paystack.
 // ------------------------------------------------------------------
 export async function POST(req) {
     try {
-        // NOTE: In production, ALWAYS verify the 'x-paystack-signature' header here
         const body = await req.json();
         
+        // Process only successful charge events
         if (body.event === 'charge.success') {
             const reference = body.data.reference;
             
-            // Run the fulfillment logic
             await handlePaystackFulfillment(reference);
             
-            // Webhook must always return 200
+            // Webhook must always return 200 to acknowledge and prevent retries
             return new NextResponse(JSON.stringify({ message: "Webhook received and processed." }), { status: 200 });
         }
         
@@ -188,6 +185,8 @@ export async function POST(req) {
 
     } catch (error) {
         console.error("FATAL WEBHOOK API ERROR:", error);
+        // Even on error, return 200 to prevent Paystack retries if possible, 
+        // relying on the GET handler for user fulfillment.
         return new NextResponse(JSON.stringify({ message: "Error processing webhook." }), { status: 200 }); 
     }
 }
