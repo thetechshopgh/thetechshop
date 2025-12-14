@@ -1,4 +1,4 @@
-// components/CartContext.jsx
+// components/CartContext.jsx (FINAL VERIFIED VERSION)
 'use client'
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
@@ -9,15 +9,21 @@ export const useCart = () => useContext(CartContext);
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
 
-  // Load cart from Local Storage on mount
+  // 1. Load cart from Local Storage on mount
   useEffect(() => {
-    const savedCart = localStorage.getItem('tech_retail_cart');
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
+    try {
+      const savedCart = localStorage.getItem('tech_retail_cart');
+      if (savedCart) {
+        // Attempt to parse, reset to empty array if data is corrupt
+        setCart(JSON.parse(savedCart));
+      }
+    } catch (error) {
+      console.error("Could not load cart from storage:", error);
+      setCart([]); // Reset cart if parsing fails
     }
   }, []);
 
-  // Save cart to Local Storage whenever it changes
+  // 2. Save cart to Local Storage whenever it changes
   useEffect(() => {
     localStorage.setItem('tech_retail_cart', JSON.stringify(cart));
   }, [cart]);
@@ -38,12 +44,10 @@ export const CartProvider = ({ children }) => {
     });
   };
 
-  // 🛑 NEW: Function to remove an item or decrease its quantity
   const removeFromCart = (productId) => {
     setCart((currentCart) => {
       return currentCart
         .map(item => {
-          // Find the item to remove
           if (item.id === productId) {
             // Decrease the quantity by 1
             return { ...item, quantity: item.quantity - 1 };
@@ -57,13 +61,14 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = () => setCart([]);
 
-  const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  // Use a safety check (|| 0) for cartTotal calculation
+  const cartTotal = cart.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
 
   return (
     <CartContext.Provider value={{ 
         cart, 
         addToCart, 
-        removeFromCart, // 🛑 NEW: Export the removal function
+        removeFromCart, // 🚨 CRITICAL: Exported
         clearCart, 
         cartTotal 
     }}>
