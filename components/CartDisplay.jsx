@@ -11,7 +11,6 @@ export default function CartDisplay() {
 
   const handleCheckout = () => {
     setIsOpen(false);
-    // Assuming you have a /checkout page setup
     router.push('/checkout');
   };
 
@@ -53,7 +52,7 @@ export default function CartDisplay() {
             </button>
           </div>
 
-          {/* Cart Items List: flex-1 ensures it takes up available space and overflow-y-auto enables scrolling */}
+          {/* Cart Items List: flex-1 takes up space, overflow-y-auto enables scrolling */}
           <div className="flex-1 overflow-y-auto p-6 bg-white">
             
             {!isLoaded ? (
@@ -68,6 +67,7 @@ export default function CartDisplay() {
             ) : (
               /* THE LOOP - Fixed Layout */
               cart.map(item => (
+                // Parent Container: Aligns items at the top and ensures a gap
                 <div key={item.id} className="flex items-start gap-4 border-b border-slate-200 pb-6 mb-6">
                   
                   {/* Image: Fixed size container w-16 h-16 */}
@@ -83,12 +83,17 @@ export default function CartDisplay() {
                     )}
                   </div>
                   
-                  {/* Item Details: min-w-0 for flex truncation and pr-2 for spacing from price */}
-                  <div className="flex-grow min-w-0 pr-2"> 
-                    <h3 className="font-semibold text-slate-900 text-sm mb-1 truncate">{item.name}</h3>
-                    <p className="text-sm text-slate-500 mb-2">₵{(item.price || 0).toFixed(2)}</p>
+                  {/* Item Details and Controls (Main Column) */}
+                  {/* Enforces a vertical stack, height 16, and distributes content vertically */}
+                  <div className="flex-grow min-w-0 pr-2 flex flex-col justify-between h-16"> 
                     
-                    {/* Controls */}
+                    {/* Top Row: Title & Unit Price */}
+                    <div>
+                        <h3 className="font-semibold text-slate-900 text-sm mb-1 truncate">{item.name}</h3>
+                        <p className="text-xs text-slate-500">Price: ₵{(item.price || 0).toFixed(2)}</p>
+                    </div>
+                    
+                    {/* Bottom Row: Quantity Controls */}
                     <div className="flex items-center gap-3">
                         <button 
                           onClick={() => removeFromCart(item.id)} 
@@ -108,7 +113,7 @@ export default function CartDisplay() {
                     </div>
                   </div>
                   
-                  {/* Item Total: flex-shrink-0 and pt-1 for alignment */}
+                  {/* Item Total: Aligned Top Right and stays on one line */}
                   <div className="flex-shrink-0 pt-1"> 
                     <span className="font-bold text-slate-900 text-sm whitespace-nowrap">
                         ₵{((item.price || 0) * item.quantity).toFixed(2)}
