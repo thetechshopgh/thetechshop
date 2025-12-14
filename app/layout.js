@@ -5,8 +5,8 @@ import CartDisplay from '../components/CartDisplay'; // 🚨 NEW IMPORT
 
 // Metadata is optional but good practice
 export const metadata = {
-  title: 'Future Tech Retail',
-  description: 'Premium gadgets for the modern creator.',
+  title: 'The Tech Shop',
+  description: 'The best place to get all your tech gadgets.',
 };
 
 export default function RootLayout({ children }) {
