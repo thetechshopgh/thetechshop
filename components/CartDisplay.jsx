@@ -40,20 +40,21 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* Sidebar Container: Reverting to max-w-sm (384px) but keeping overflow-x-hidden */}
+        {/* Sidebar Container: max-w-sm (384px) with guaranteed overflow control */}
         <div 
           className={`fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
-          {/* Header (Unchanged) */}
-          <div className="flex justify-between items-center p-6 border-b">
+          
+          {/* Header: Reduced horizontal padding to p-4 (px-4) */}
+          <div className="flex justify-between items-center px-4 py-4 border-b">
             <h2 className="text-2xl font-bold text-slate-900">Your Cart</h2>
             <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-slate-100">
               <X size={24} className="text-slate-900" />
             </button>
           </div>
 
-          {/* Cart Items List: Scrollable Area */}
-          <div className="flex-1 overflow-y-auto p-6 bg-white">
+          {/* Cart Items List: Reduced horizontal padding to px-4 */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 bg-white">
             
             {!isLoaded ? (
                /* Loading State */
@@ -65,12 +66,12 @@ export default function CartDisplay() {
               /* Empty State */
               <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
             ) : (
-              /* THE LOOP - GRID LAYOUT FIX */
+              /* THE LOOP - ABSOLUTE COLUMN CONTROL (Grid) */
               cart.map(item => (
-                // 🚨 CRITICAL FIX: Changed flex to grid. Template: 64px | 1fr (auto) | 80px (for price)
-                <div key={item.id} className="grid grid-cols-[64px_1fr_80px] gap-3 items-start border-b border-slate-200 pb-4 mb-4">
+                // 🚨 CRITICAL FIX: Grid Template adjusted: 64px | minmax(0, 1fr) | auto. Gap reduced to 3.
+                <div key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-3 items-center border-b border-slate-200 pb-4 mb-4">
                   
-                  {/* Column 1: Image (w-16 h-16 = 64px) */}
+                  {/* Column 1: Image (Fixed 64px) */}
                   <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden border border-gray-200">
                     {item.image_url ? (
                         <img 
@@ -83,14 +84,12 @@ export default function CartDisplay() {
                     )}
                   </div>
                   
-                  {/* Column 2: Item Details and Controls (1fr - Fills space) */}
-                  <div className="flex flex-col justify-between h-16"> 
+                  {/* Column 2: Item Details and Controls (1fr - Takes all remaining space) */}
+                  <div className="flex flex-col justify-center overflow-hidden"> 
                     
                     {/* Title & Unit Price */}
-                    <div>
-                        <h3 className="font-semibold text-slate-900 text-sm mb-1 truncate">{item.name}</h3>
-                        <p className="text-xs text-slate-500">Price: ₵{(item.price || 0).toFixed(2)}</p>
-                    </div>
+                    <h3 className="font-semibold text-slate-900 text-sm mb-1 truncate">{item.name}</h3>
+                    <p className="text-xs text-slate-500 mb-2">Price: ₵{(item.price || 0).toFixed(2)}</p>
                     
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-3">
@@ -112,8 +111,8 @@ export default function CartDisplay() {
                     </div>
                   </div>
                   
-                  {/* Column 3: Item Total (Fixed Width 80px) */}
-                  <div className="pt-1 text-right"> 
+                  {/* Column 3: Item Total (Auto-width, right aligned) */}
+                  <div className="text-right"> 
                     <span className="font-bold text-slate-900 text-sm whitespace-nowrap">
                         ₵{((item.price || 0) * item.quantity).toFixed(2)}
                     </span>
@@ -123,8 +122,8 @@ export default function CartDisplay() {
             )}
           </div>
 
-          {/* Footer/Checkout (Unchanged) */}
-          <div className="p-6 border-t bg-gray-50">
+          {/* Footer/Checkout: Reduced horizontal padding to px-4 */}
+          <div className="px-4 py-4 border-t bg-gray-50">
             <div className="flex justify-between items-center text-xl font-bold mb-4 text-slate-900">
               <span>Subtotal:</span>
               <span>₵{cartTotal.toFixed(2)}</span>
