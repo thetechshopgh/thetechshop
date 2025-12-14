@@ -30,7 +30,7 @@ export default function CartDisplay() {
         )}
       </button>
 
-      {/* 2. Cart Sidebar (Drawer) (Unchanged) */}
+      {/* 2. Cart Sidebar (Drawer) */}
       <div 
         className={`fixed inset-0 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
@@ -42,7 +42,8 @@ export default function CartDisplay() {
 
         {/* Sidebar Container */}
         <div 
-          className={`fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+          // 🚨 FIX 1: Increased max-w to md (448px) for more room and added overflow-x-hidden
+          className={`fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
           {/* Header (Unchanged) */}
           <div className="flex justify-between items-center p-6 border-b">
@@ -65,11 +66,11 @@ export default function CartDisplay() {
               /* Empty State */
               <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
             ) : (
-              /* THE LOOP - Final, Fixed Layout */
+              /* THE LOOP - Fixed Layout */
               cart.map(item => (
                 <div key={item.id} className="flex items-start gap-3 border-b border-slate-200 pb-6 mb-6">
                   
-                  {/* Column 1: Image (Fixed Width) */}
+                  {/* Column 1: Image (Fixed Width 16) */}
                   <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden border border-gray-200">
                     {item.image_url ? (
                         <img 
@@ -91,7 +92,7 @@ export default function CartDisplay() {
                         <p className="text-xs text-slate-500">Price: ₵{(item.price || 0).toFixed(2)}</p>
                     </div>
                     
-                    {/* Quantity Controls: Now clearly visible */}
+                    {/* Quantity Controls */}
                     <div className="flex items-center gap-3">
                         <button 
                           onClick={() => removeFromCart(item.id)} 
