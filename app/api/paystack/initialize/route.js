@@ -5,39 +5,38 @@ export async function POST(req) {
     const body = await req.json();
     const { email, amount, metadata } = body;
 
-    // 🚨 1. TEMPORARY HARDCODED KEY FOR DEBUGGING 🚨
-    // Replace 'sk_test_YOUR_ACTUAL_TEST_SECRET_KEY' with the key from your Paystack Dashboard.
-    // Ensure you use your ACTUAL TEST Key here, not the production one.
-    const DEBUG_SECRET_KEY = 'sk_test_5ffde4e7b9b2f47df003e1c20357d77eea051496'; 
-    // If you are testing on your live site, use your LIVE key instead:
-    // const DEBUG_SECRET_KEY = 'sk_live_xxxxxxxxxxxxxxxxxxxxxx'; 
+    // --- 1. Validation and Amount Preparation (CRITICAL FIX AREA) ---
     
-    // Check if the hardcoded key is defined before proceeding (safety check)
-    if (!DEBUG_SECRET_KEY || DEBUG_SECRET_KEY.includes('xxxxxxxx')) {
-        console.error("DEBUG ERROR: Debug key is not set. Please replace the placeholder.");
-        throw new Error('Debugging key not configured.');
+    // Check Secret Key (Production safety check)
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+        console.error("ENVIRONMENT ERROR: PAYSTACK_SECRET_KEY is missing.");
+        throw new Error('Server authentication key is missing.');
     }
 
-    // Ensure the amount is a valid positive number and convert to pesewas
+    // Convert client-side amount (e.g., 12.50) to Pesewas (1250) and ensure it's a safe integer.
     const totalPesewas = Math.round(Number(amount) * 100);
+    const MINIMUM_AMOUNT_PESEWAS = 50; // Minimum transaction amount (₵0.50 GHS)
 
-    if (isNaN(totalPesewas) || totalPesewas <= 0) {
-        throw new Error('Invalid or zero payment amount.');
+    // Validate the final calculated amount
+    if (isNaN(totalPesewas) || totalPesewas < MINIMUM_AMOUNT_PESEWAS) {
+        console.error(`Invalid payment amount: ${totalPesewas} pesewas.`);
+        // Note: The client-side should prevent this, but this is a server defense.
+        throw new Error(`Payment amount must be at least ₵${(MINIMUM_AMOUNT_PESEWAS / 100).toFixed(2)}.`);
     }
-
+    
     const paystackUrl = 'https://api.paystack.co/transaction/initialize';
 
-    // --- 2. Call Paystack API using the hardcoded key ---
+    // --- 2. Call Paystack API ---
     const res = await fetch(paystackUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${DEBUG_SECRET_KEY}`, // 🚨 USING THE HARDCODED KEY HERE 🚨
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`, // Using the secure ENV variable
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         email,
         amount: totalPesewas, 
-        currency: 'GHS', 
+        currency: 'GHS', // Required for Ghana transactions
         metadata, 
         callback_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://thetechshop.vercel.app'}/api/paystack/callback`, 
       }),
@@ -47,15 +46,18 @@ export async function POST(req) {
     const data = await res.json();
 
     if (!res.ok) {
-        // Log the actual status code from Paystack
+        // Log the exact status code and Paystack's error message
         console.error(`Paystack API Error Status: ${res.status}`, data); 
-        throw new Error(data.message || `Paystack initialization failed with status ${res.status}`);
+        // Return a slightly more helpful error to the client
+        throw new Error(data.message || `Payment initialization failed with status ${res.status}.`);
     }
 
+    // Success: Return the authorization URL to the client
     return NextResponse.json(data.data);
     
   } catch (error) {
     console.error('Paystack Init Critical Error:', error.message);
+    // Return a generic 500 error to the client for security
     return NextResponse.json({ error: 'Payment initialization failed. Please try again later.' }, { status: 500 });
   }
 }
