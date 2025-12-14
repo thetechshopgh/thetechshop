@@ -55,13 +55,11 @@ export default function CartDisplay() {
           </div>
 
           {/* Cart Items List */}
-          {/* 🚨 DEBUG CHANGE 1: Added border-red-500 to see list area height */}
           <div className="flex-grow overflow-y-auto space-y-4 border border-red-500">
             {cart.length === 0 ? (
               <p className="text-center text-slate-500 mt-10">Your cart is empty.</p>
             ) : (
               cart.map(item => (
-                {/* 🚨 DEBUG CHANGE 2: Added bg-slate-800 and text-white for maximum visibility */}
                 <div key={item.id} className="flex items-start gap-4 border-b pb-4 bg-slate-800 p-2 text-white">
                   <div className="w-16 h-16 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
                     {/* Product image */}
