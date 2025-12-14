@@ -16,7 +16,7 @@ export default function CartDisplay() {
 
   return (
     <>
-      {/* 1. Cart Icon Button (Unchanged) */}
+      {/* 1. Cart Icon Button (This will now only be the visible button) */}
       <button 
         onClick={() => setIsOpen(true)}
         className="relative p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition"
@@ -30,7 +30,7 @@ export default function CartDisplay() {
         )}
       </button>
 
-      {/* 2. Cart Sidebar (Drawer) */}
+      {/* 2. Cart Sidebar (The Drawer Component - Needs to be high in the DOM) */}
       <div 
         className={`fixed inset-0 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
@@ -40,12 +40,12 @@ export default function CartDisplay() {
           className="absolute inset-0 bg-black/50"
         ></div>
 
-        {/* Sidebar Container: Reverted to standard w-96 positioning */}
+        {/* Sidebar Container: w-96 (384px wide) */}
         <div 
           className={`fixed right-0 top-0 bottom-0 w-96 bg-white shadow-2xl transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'} overflow-x-hidden`}
         >
           
-          {/* Header: Fixed px-4 padding */}
+          {/* Header */}
           <div className="flex justify-between items-center px-4 py-4 border-b">
             <h2 className="text-2xl font-bold text-slate-900">Your Cart</h2>
             <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-slate-100">
@@ -53,7 +53,7 @@ export default function CartDisplay() {
             </button>
           </div>
 
-          {/* Cart Items List: p-0 padding */}
+          {/* Cart Items List: Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-0 bg-white">
             
             {!isLoaded ? (
@@ -117,7 +117,7 @@ export default function CartDisplay() {
             )}
           </div>
 
-          {/* Footer/Checkout: Reduced to minimum px-4 padding */}
+          {/* Footer/Checkout */}
           <div className="px-4 py-4 border-t bg-gray-50">
             <div className="flex justify-between items-center text-xl font-bold mb-4 text-slate-900">
               <span>Subtotal:</span>
