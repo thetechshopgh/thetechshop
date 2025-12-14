@@ -35,7 +35,7 @@ export default function Store() {
       {/* Navbar */}
       <nav className="border-b border-gray-100 bg-white/90 backdrop-blur-sm sticky top-0 z-50">
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col md:flex-row gap-4 justify-between items-center">
-          <div className="font-bold text-2xl tracking-tighter text-slate-900">THE<span className="text-indigo-600"> TECH SHOP</span>.</div>
+          <div className="font-bold text-2xl tracking-tighter text-slate-900">THE<span className="text-indigo-600"> TECH SHOP</span></div>
           
           {/* Search Bar - Enhanced */}
           <div className="relative w-full max-w-lg">
