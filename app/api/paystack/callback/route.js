@@ -1,11 +1,9 @@
-// app/api/paystack/callback/route.js (Final code with POST Webhook & Uniqueness Check)
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { Resend } from 'resend';
-// import crypto from 'crypto'; // Needed for webhook verification (not in this version)
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-// 🛑 REMINDER: Replace this placeholder with your actual admin email!
+// 🛑 REMINDER: Ensure you have replaced this with your actual admin email!
 const ADMIN_EMAIL = 'YOUR_ADMIN_EMAIL@example.com'; 
 
 // --- Core Verification and Fulfillment Logic ---
@@ -17,12 +15,13 @@ async function handlePaystackFulfillment(reference) {
         .eq('reference', reference)
         .single();
         
+    // Paystack might call us multiple times (webhook and redirect), this prevents duplicates.
     if (existingOrder) {
-        // Order already exists, prevent duplicate processing.
         return { success: true, message: "Order already processed." };
     }
     
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means 'No rows found'
+    // Ignore 'no rows found' error (PGRST116), throw other errors
+    if (fetchError && fetchError.code !== 'PGRST116') { 
         console.error("Supabase Order Check Error:", fetchError);
         return { success: false, message: "Database query error." };
     }
@@ -41,14 +40,15 @@ async function handlePaystackFulfillment(reference) {
     
     const { customer, amount, metadata } = verifyData.data;
 
-    // Extract details from metadata
-    const { 
-        fullName = 'N/A', 
-        phoneNumber = 'N/A', 
-        digitalAddress = 'N/A', 
-        deliveryAddress = 'N/A', 
-        cartItems = [] 
-    } = metadata || {}; 
+    // 🚨 METADATA FIX: Use object spreading to ensure variables are defined 🚨
+    // We assume your metadata keys match the target database columns (e.g., 'full_name' or 'fullName')
+    const customerDetails = {
+        fullName: metadata?.fullName || metadata?.full_name || 'N/A', 
+        phoneNumber: metadata?.phoneNumber || metadata?.phone_number || 'N/A', 
+        digitalAddress: metadata?.digitalAddress || metadata?.digital_address || 'N/A', 
+        deliveryAddress: metadata?.deliveryAddress || metadata?.delivery_address || 'N/A', 
+        cartItems: metadata?.cartItems || [], // Keep cartItems separate
+    };
 
     const totalAmount = (amount/100).toFixed(2);
     
@@ -59,22 +59,22 @@ async function handlePaystackFulfillment(reference) {
         reference: reference,
         status: 'paid',
         
-        full_name: fullName, 
-        phone_number: phoneNumber,
-        digital_address: digitalAddress,
-        delivery_address: deliveryAddress, 
+        // Map the safely extracted details to the database columns:
+        full_name: customerDetails.fullName, 
+        phone_number: customerDetails.phoneNumber,
+        digital_address: customerDetails.digitalAddress,
+        delivery_address: customerDetails.deliveryAddress, 
 
-        order_items_json: JSON.stringify(cartItems), 
+        order_items_json: JSON.stringify(customerDetails.cartItems), 
     });
     
     if (dbError) {
         console.error("Supabase DB Save Error:", dbError);
-        // Do NOT return false here, as we still want the email to go out
     }
 
     // --- 4. Prepare and Send Email Notifications ---
-    const itemsHtml = cartItems.map(item => 
-        `<li>${item.name} (x${item.quantity}) - Price: ₵${item.price.toFixed(2)} each</li>`
+    const itemsHtml = customerDetails.cartItems.map(item => 
+        `<li>${item.name} (x${item.quantity}) - Price: ₵${(item.price || 0).toFixed(2)} each</li>`
     ).join('');
 
     const emailHtml = `
@@ -83,11 +83,11 @@ async function handlePaystackFulfillment(reference) {
       
       <h3>Customer & Delivery Details:</h3>
       <ul style="list-style-type: none; padding: 0;">
-          <li><strong>Customer Name:</strong> ${fullName}</li>
+          <li><strong>Customer Name:</strong> ${customerDetails.fullName}</li>
           <li><strong>Email:</strong> ${customer.email}</li>
-          <li><strong>Phone:</strong> ${phoneNumber}</li>
-          <li><strong>Digital Address:</strong> ${digitalAddress}</li>
-          <li><strong>Physical Address:</strong> ${deliveryAddress}</li>
+          <li><strong>Phone:</strong> ${customerDetails.phoneNumber}</li>
+          <li><strong>Digital Address:</strong> ${customerDetails.digitalAddress}</li>
+          <li><strong>Physical Address:</strong> ${customerDetails.deliveryAddress}</li>
           <li><strong>Transaction Ref:</strong> ${reference}</li>
       </ul>
 
@@ -131,20 +131,16 @@ export async function GET(req) {
     }
 
     try {
-        // Run the main fulfillment logic
         const result = await handlePaystackFulfillment(reference);
 
         if (result.success) {
-            // Success: Redirect user to the Thank You Page
             return NextResponse.redirect(new URL(`/thank-you?reference=${reference}`, url));
         }
 
-        // Failure: Redirect to a payment failure page
         return NextResponse.redirect(new URL('/order/failure?code=verification_failed', url));
 
     } catch (error) {
         console.error("FATAL CALLBACK API ERROR:", error);
-        // Redirect to a general server issue page
         return NextResponse.redirect(new URL('/order/failure?code=server_error', url));
     }
 }
@@ -155,28 +151,22 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const body = await req.json();
-        
-        // ⚠️ SECURITY STEP: Paystack recommends verifying the webhook signature here
-        // if (!verifySignature(req.headers.get('x-paystack-signature'), req.body)) {
-        //     return new NextResponse("Invalid Signature", { status: 400 });
-        // }
 
+        // ⚠️ For production, you MUST verify the webhook signature here 
+        
         if (body.event === 'charge.success') {
             const reference = body.data.reference;
             
-            // Run the main fulfillment logic (it handles the verification check internally)
             await handlePaystackFulfillment(reference);
             
-            // Webhook must return a 200 status code to acknowledge receipt
+            // Webhook must always return 200 to acknowledge receipt
             return new NextResponse(JSON.stringify({ message: "Webhook received and processed." }), { status: 200 });
         }
         
-        // Acknowledge other events without processing
         return new NextResponse(JSON.stringify({ message: "Event ignored." }), { status: 200 });
 
     } catch (error) {
         console.error("FATAL WEBHOOK API ERROR:", error);
-        // Return 200 so Paystack doesn't keep retrying, but log the error
         return new NextResponse(JSON.stringify({ message: "Error processing webhook." }), { status: 200 }); 
     }
 }
