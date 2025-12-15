@@ -1,4 +1,4 @@
-// app/page.jsx (Final Code)
+// app/page.jsx (FINAL CODE with Guaranteed Alignment Fix)
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -97,7 +97,7 @@ export default function Store() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.05 }}
-                    // Apply visual dimming if sold out
+                    // Card structure: flex-col ensures content pushes footer down
                   className={`group relative flex flex-col overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-200 transition-all hover:shadow-2xl hover:ring-indigo-200 ${isSoldOut ? 'opacity-60 grayscale' : ''}`}
                 >
                   {/* Image Container */}
@@ -128,6 +128,7 @@ export default function Store() {
                   </div>
 
                   {/* Content */}
+                    {/* The flex-col here ensures the price row is pushed to the bottom */}
                   <div className="flex flex-1 flex-col p-6">
                     {/* Link to Product Page */}
                         {/* Disable link if sold out */}
@@ -138,8 +139,8 @@ export default function Store() {
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600">{product.name}</h3>
                     </Link>
                     
-                    {/* 🛑 FIX: Fixed height h-16 (64px) for perfect vertical alignment */}
-                    <p className="mt-2 text-sm text-slate-500 h-16 overflow-hidden">{product.description}</p>
+                    {/* 🛑 FINAL FIX: Increased fixed height to h-20 (80px) to guarantee alignment for longer descriptions */}
+                    <p className="mt-2 text-sm text-slate-500 h-20 overflow-hidden">{product.description}</p>
                     
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
