@@ -62,8 +62,9 @@ export default function Store() {
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="font-bold text-2xl tracking-tighter text-slate-900">
-            THE<span className="text-indigo-600"> TECH SHOP</span>
+           <div className="font-bold text-2xl tracking-tighter text-slate-900">
+  TECHY<span className="text-indigo-600">CITY</span>
+</div>
           </div>
 
           <div className="relative w-full max-w-lg">
