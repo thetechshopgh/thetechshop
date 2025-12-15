@@ -220,7 +220,7 @@ export default function Store() {
 
           <div>
             <div className="font-bold text-xl tracking-tighter">
-              THE<span className="text-indigo-400"> TECH SHOP</span>
+              TECHY<span className="text-indigo-400"> CITY</span>
             </div>
             <p className="mt-4 text-sm text-slate-400">
               Your reliable source for performance-driven electronics.
