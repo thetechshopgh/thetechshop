@@ -1,4 +1,4 @@
-// app/page.jsx (FINAL CODE - Addressing Void and Button Text/Alignment)
+// app/page.jsx (FINAL CODE - Header Size and Void Removal Fix)
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -7,7 +7,6 @@ import { ShoppingBag, Loader2, Search, XCircle, Zap, Mail, Phone } from 'lucide-
 import Image from 'next/image'
 import Link from 'next/link' 
 import { useCart } from '@/components/CartContext';
-// CartDisplay import remains, but is not rendered in this file.
 
 export default function Store() {
   const [products, setProducts] = useState([])
@@ -61,7 +60,8 @@ export default function Store() {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-6xl font-black tracking-tighter text-slate-900 sm:text-7xl"
+            {/* 🛑 HEADER FIX: Reduced desktop font size from 7xl to 6xl */}
+            className="text-5xl font-black tracking-tighter text-slate-900 sm:text-6xl" 
           >
             Powering the Future <br />
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">One Gadget at a Time.</span>
@@ -139,8 +139,8 @@ export default function Store() {
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 truncate line-clamp-1">{product.name}</h3>
                     </Link>
                     
-                    {/* 🛑 CRITICAL ALIGNMENT FIX: Use h-20 AND line-clamp-4 for absolute height consistency */}
-                    <p className="mt-2 text-sm text-slate-500 h-20 overflow-hidden line-clamp-4">{product.description}</p>
+                    {/* 🛑 VOID FIX: Removed fixed height, relies purely on line-clamp-4 and flex-1 parent */}
+                    <p className="mt-2 text-sm text-slate-500 overflow-hidden line-clamp-4">{product.description}</p>
                     
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
