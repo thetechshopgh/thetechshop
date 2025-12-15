@@ -1,12 +1,14 @@
-// app/page.jsx
+// app/page.jsx (Updated with Sold Out Logic and Footer)
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { motion } from 'framer-motion'
+// ADDED XCircle, Zap, Mail, Phone for Sold Out feature and Footer
 import { ShoppingBag, Loader2, Search, XCircle, Zap, Mail, Phone } from 'lucide-react' 
 import Image from 'next/image'
 import Link from 'next/link' 
 import { useCart } from '@/components/CartContext';
+import CartDisplay from '@/components/CartDisplay';
 
 export default function Store() {
   const [products, setProducts] = useState([])
@@ -21,7 +23,7 @@ export default function Store() {
   async function fetchProducts() {
     const { data } = await supabase
         .from('products')
-        // Ensure inventory fields are selected for frontend logic
+        // Ensure necessary fields for sold out/low stock status are selected
         .select('*, inventory, is_sold_out') 
         .order('created_at', { ascending: false })
     setProducts(data || [])
@@ -40,7 +42,7 @@ export default function Store() {
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="font-bold text-2xl tracking-tighter text-slate-900">THE<span className="text-indigo-600"> TECH SHOP</span></div>
           
-          {/* Search Bar */}
+          {/* Search Bar - Enhanced */}
           <div className="relative w-full max-w-lg">
             <input 
               type="text" 
@@ -54,7 +56,7 @@ export default function Store() {
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* Hero - Styled and cleaner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-white to-indigo-50 pb-16 pt-24 text-center border-b border-gray-200">
         <div className="relative z-10 mx-auto max-w-3xl px-6">
           <motion.h1 
@@ -69,7 +71,6 @@ export default function Store() {
             Hand-picked devices engineered for performance and reliability.
           </p>
         </div>
-        
       </div>
 
       {/* Grid */}
@@ -78,6 +79,7 @@ export default function Store() {
           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-600" size={40}/></div>
         ) : (
           <>
+            {/* No results message */}
             {filteredProducts.length === 0 && (
               <div className="text-center py-20 text-gray-500">
                 <p className="text-xl">No products found matching "{searchQuery}"</p>
@@ -87,10 +89,10 @@ export default function Store() {
 
             <div className="grid grid-cols-1 gap-y-12 gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
               {filteredProducts.map((product, i) => {
-                  const isSoldOut = product.is_sold_out; 
-                  const isLowStock = !isSoldOut && product.inventory < 5 && product.inventory > 0;
-                  
-                  return (
+                    const isSoldOut = product.is_sold_out; 
+                    const isLowStock = !isSoldOut && product.inventory !== null && product.inventory < 5 && product.inventory > 0;
+                    
+                    return (
                 <motion.div 
                   key={product.id}
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -101,12 +103,13 @@ export default function Store() {
                 >
                   {/* Image Container */}
                   <div className="relative aspect-square w-full overflow-hidden bg-gray-100 p-4">
-                        {/* SOLD OUT BADGE */}
+                        {/* 🚨 SOLD OUT BADGE */}
                         {isSoldOut && (
                             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 text-white text-3xl font-black tracking-widest pointer-events-none">
                                 SOLD OUT
                             </div>
                         )}
+                        {/* 🚨 LOW STOCK BADGE */}
                         {isLowStock && (
                             <div className="absolute top-4 right-4 z-10 flex items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-bold text-slate-900 shadow-md">
                                 <Zap size={14} /> Low Stock!
@@ -128,30 +131,32 @@ export default function Store() {
                   {/* Content */}
                   <div className="flex flex-1 flex-col p-6">
                     {/* Link to Product Page */}
+                        {/* Disable link if sold out */}
                         <Link 
-                            href={isSoldOut ? '#' : `/products/${product.id}`}
+                            href={isSoldOut ? '#' : `/products/${product.id}`} 
                             className={`${isSoldOut ? 'cursor-default' : 'hover:text-indigo-600'} transition duration-300`}
                         >
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600">{product.name}</h3>
                     </Link>
                     
-                    {/* FIX 1: Increased min-height to ensure alignment and fix the "void" */}
+                    {/* FIX: Added min-h-[60px] to description to align bottom row (as previously requested) */}
                     <p className="mt-2 flex-1 text-sm text-slate-500 min-h-[60px]">{product.description}</p>
                     
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
-                      <span className="text-2xl font-bold text-slate-900">₵{product.price.toFixed(2)}</span>
+                      <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
                       
-                        {/* FIX 2: Fixed moderate width (w-36) and height (h-[42px]) for consistent moderate sizing */}
+                        {/* 🚨 ACTION BUTTON WITH SOLD OUT STATE */}
                       <button 
                         onClick={() => !isSoldOut && addToCart(product)} 
-                        disabled={isSoldOut}
-                        className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors h-[42px] w-36
+                        disabled={isSoldOut}
+                        // Fixed moderate width (w-36) and height (h-[42px]) for consistent moderate sizing
+                        className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors h-[42px] w-36 
                             ${isSoldOut 
-                                ? 'bg-red-500 cursor-not-allowed'
-                                : 'bg-slate-900 hover:bg-indigo-600'
+                                ? 'bg-red-500 cursor-not-allowed' // Red and disabled if sold out
+                                : 'bg-slate-900 hover:bg-indigo-600' // Dark default if available
                             }`}
                       >
-                        {isSoldOut ? (
+                        {isSoldOut ? (
                             <>
                                 <XCircle size={16} /> Sold Out
                             </>
@@ -164,14 +169,13 @@ export default function Store() {
                     </div>
                   </div>
                 </motion.div>
-              );
-              })}
+              )})}
             </div>
           </>
         )}
       </div>
-        
-    {/* FOOTER / SUPPORT SECTION */}
+      
+    {/* 🚨 FOOTER / SUPPORT SECTION (As requested) */}
     <footer className="bg-slate-900 text-white mt-12 py-16">
         <div className="mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-3 gap-10">
             {/* Column 1: Branding */}
