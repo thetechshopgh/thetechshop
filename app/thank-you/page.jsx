@@ -30,7 +30,7 @@ export default function ThankYouPage() {
                 </h1>
 
                 <p className="text-lg text-slate-600 mb-8">
-                    Thank you for shopping with The Tech Shop. Your order is being processed.
+                    Thank you for shopping with TechyCity. Your order is being processed.
                 </p>
 
                 <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-200">
