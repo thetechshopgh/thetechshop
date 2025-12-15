@@ -60,7 +60,6 @@ export default function Store() {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            {/* Reduced desktop font size again for less overlap risk */}
             className="text-5xl font-black tracking-tighter text-slate-900 sm:text-6xl" 
           >
             Powering the Future <br />
