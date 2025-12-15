@@ -58,7 +58,6 @@ export default function Store() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD]">
-// CORRECTED NAVBAR SECTION
 
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-sm">
