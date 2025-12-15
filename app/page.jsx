@@ -58,15 +58,19 @@ export default function Store() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD]">
+// CORRECTED NAVBAR SECTION
 
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-sm">
+        {/* Main container for the navbar content */}
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+           
+           {/* Logo / Branding */}
            <div className="font-bold text-2xl tracking-tighter text-slate-900">
-  TECHY<span className="text-indigo-600">CITY</span>
-</div>
-          </div>
-
+             TECHY<span className="text-indigo-600">CITY</span>
+           </div>
+          
+          {/* Search Bar - This was misplaced outside the main container */}
           <div className="relative w-full max-w-lg">
             <input
               type="text"
@@ -74,12 +78,14 @@ export default function Store() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-full border-2 border-gray-200 bg-white shadow-inner focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition"
-            />
+              aria-label="Search products"
+            /> 
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           </div>
-        </div>
+          
+        </div> 
       </nav>
-
+      {/* End of NAVBAR */}
       {/* HERO */}
       <div className="relative overflow-hidden bg-gradient-to-br from-white to-indigo-50
                       pt-10 pb-12 sm:pt-14 sm:pb-16 text-center border-b border-gray-200">
