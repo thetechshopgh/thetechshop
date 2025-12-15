@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { motion } from 'framer-motion'
-// Import the Check circle for the stock status indicator
-import { ShoppingBag, Loader2, Search, Zap, XCircle } from 'lucide-react' 
+// Include XCircle for Sold Out icon, and Zap for Low Stock
+import { ShoppingBag, Loader2, Search, XCircle, Zap } from 'lucide-react' 
 import Image from 'next/image'
 import Link from 'next/link' 
 import { useCart } from '@/components/CartContext';
@@ -21,10 +21,11 @@ export default function Store() {
   }, [])
 
   async function fetchProducts() {
-    // 🚨 FIX 1: Explicitly select the inventory fields 🚨
+    // 🚨 IMPORTANT: Select the inventory fields
     const { data } = await supabase
         .from('products')
-        .select('*, inventory, is_sold_out') // Ensure these columns are selected
+        // Select all fields plus the inventory tracking fields
+        .select('*, inventory, is_sold_out') 
         .order('created_at', { ascending: false })
     setProducts(data || [])
     setLoading(false)
@@ -71,6 +72,7 @@ export default function Store() {
             Hand-picked devices engineered for performance and reliability.
           </p>
         </div>
+        {/* Note: CartDisplay likely belongs here or outside the main content flow, but is omitted */}
       </div>
 
       {/* Grid */}
@@ -79,7 +81,6 @@ export default function Store() {
           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-600" size={40}/></div>
         ) : (
           <>
-            {/* No results message */}
             {filteredProducts.length === 0 && (
               <div className="text-center py-20 text-gray-500">
                 <p className="text-xl">No products found matching "{searchQuery}"</p>
@@ -89,7 +90,7 @@ export default function Store() {
 
             <div className="grid grid-cols-1 gap-y-12 gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
               {filteredProducts.map((product, i) => {
-                  const isSoldOut = product.is_sold_out; // Read the status
+                  const isSoldOut = product.is_sold_out; 
                   const isLowStock = !isSoldOut && product.inventory < 5 && product.inventory > 0;
                   
                   return (
@@ -103,7 +104,7 @@ export default function Store() {
                 >
                   {/* Image Container */}
                   <div className="relative aspect-square w-full overflow-hidden bg-gray-100 p-4">
-                        {/* 🚨 FIX 2: SOLD OUT BADGE 🚨 */}
+                        {/* SOLD OUT BADGE */}
                         {isSoldOut && (
                             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 text-white text-3xl font-black tracking-widest pointer-events-none">
                                 SOLD OUT
@@ -131,7 +132,7 @@ export default function Store() {
                   <div className="flex flex-1 flex-col p-6">
                     {/* Link to Product Page */}
                         <Link 
-                            href={isSoldOut ? '#' : `/products/${product.id}`} // Prevent link navigation if sold out
+                            href={isSoldOut ? '#' : `/products/${product.id}`}
                             className={`${isSoldOut ? 'cursor-default' : 'hover:text-indigo-600'} transition duration-300`}
                         >
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600">{product.name}</h3>
@@ -142,14 +143,15 @@ export default function Store() {
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price.toFixed(2)}</span>
                       
-                        {/* 🚨 FIX 3: DISABLE BUTTON 🚨 */}
+                        {/* ACTION BUTTON (FIXED STYLING) */}
                       <button 
                         onClick={() => !isSoldOut && addToCart(product)} 
-                        disabled={isSoldOut} // CRITICAL: Disabled if sold out
-                        className={`flex items-center gap-2 rounded-full px-6 py-2 text-sm font-semibold text-white transition-colors 
+                        disabled={isSoldOut}
+                        // FIX: Added h-[42px] and justify-center for consistent vertical alignment and size
+                        className={`flex items-center justify-center gap-2 rounded-full px-6 py-2 text-sm font-semibold text-white transition-colors h-[42px] w-auto 
                             ${isSoldOut 
-                                ? 'bg-red-500 cursor-not-allowed' // Red and non-interactive
-                                : 'bg-slate-900 hover:bg-indigo-600' // Normal interactive state
+                                ? 'bg-red-500 cursor-not-allowed'
+                                : 'bg-slate-900 hover:bg-indigo-600'
                             }`}
                       >
                         {isSoldOut ? (
