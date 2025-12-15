@@ -1,4 +1,4 @@
-// app/page.jsx (FINAL CODE - Header Size and Void Removal Fix)
+// app/page.jsx (FINAL CODE - Addressing Header Overlap and Card Alignment)
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -35,7 +35,7 @@ export default function Store() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD]">
-      {/* Navbar */}
+      {/* 1. NAVBAR - Sticky with high Z-index */}
       <nav className="border-b border-gray-100 bg-white/90 backdrop-blur-sm sticky top-0 z-50">
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="font-bold text-2xl tracking-tighter text-slate-900">THE<span className="text-indigo-600"> TECH SHOP</span></div>
@@ -54,13 +54,14 @@ export default function Store() {
         </div>
       </nav>
 
-      {/* Hero - Styled and cleaner */}
+      {/* 2. HERO - Ensures text is smaller and centered */}
       <div className="relative overflow-hidden bg-gradient-to-br from-white to-indigo-50 pb-16 pt-24 text-center border-b border-gray-200">
         <div className="relative z-10 mx-auto max-w-3xl px-6">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-        className="text-5xl font-black tracking-tighter text-slate-900 sm:text-6xl" 
+            {/* Reduced desktop font size again for less overlap risk */}
+            className="text-5xl font-black tracking-tighter text-slate-900 sm:text-6xl" 
           >
             Powering the Future <br />
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">One Gadget at a Time.</span>
@@ -138,8 +139,8 @@ export default function Store() {
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 truncate line-clamp-1">{product.name}</h3>
                     </Link>
                     
-                    {/* 🛑 VOID FIX: Removed fixed height, relies purely on line-clamp-4 and flex-1 parent */}
-                    <p className="mt-2 text-sm text-slate-500 overflow-hidden line-clamp-4">{product.description}</p>
+                    {/* 🛑 VOID FIX: Re-enforcing fixed height with line-clamp to force alignment */}
+                    <p className="mt-2 text-sm text-slate-500 h-16 overflow-hidden line-clamp-4">{product.description}</p>
                     
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
