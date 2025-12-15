@@ -3,12 +3,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { motion } from 'framer-motion'
-// Include XCircle for Sold Out icon, and Zap for Low Stock
-import { ShoppingBag, Loader2, Search, XCircle, Zap } from 'lucide-react' 
+import { ShoppingBag, Loader2, Search, XCircle, Zap, Mail, Phone } from 'lucide-react' 
 import Image from 'next/image'
 import Link from 'next/link' 
 import { useCart } from '@/components/CartContext';
-// Assuming CartDisplay is rendered elsewhere or omitted for brevity
 
 export default function Store() {
   const [products, setProducts] = useState([])
@@ -21,10 +19,9 @@ export default function Store() {
   }, [])
 
   async function fetchProducts() {
-    // 🚨 IMPORTANT: Select the inventory fields
     const { data } = await supabase
         .from('products')
-        // Select all fields plus the inventory tracking fields
+        // Ensure inventory fields are selected for frontend logic
         .select('*, inventory, is_sold_out') 
         .order('created_at', { ascending: false })
     setProducts(data || [])
@@ -72,7 +69,6 @@ export default function Store() {
             Hand-picked devices engineered for performance and reliability.
           </p>
         </div>
-        {/* Note: CartDisplay likely belongs here or outside the main content flow, but is omitted */}
       </div>
 
       {/* Grid */}
@@ -143,12 +139,11 @@ export default function Store() {
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price.toFixed(2)}</span>
                       
-                        {/* ACTION BUTTON (FIXED STYLING) */}
+                        {/* ACTION BUTTON (Standardized Size) */}
                       <button 
                         onClick={() => !isSoldOut && addToCart(product)} 
                         disabled={isSoldOut}
-                        // FIX: Added h-[42px] and justify-center for consistent vertical alignment and size
-                        className={`flex items-center justify-center gap-2 rounded-full px-6 py-2 text-sm font-semibold text-white transition-colors h-[42px] w-auto 
+                        className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors h-[42px] w-[140px] 
                             ${isSoldOut 
                                 ? 'bg-red-500 cursor-not-allowed'
                                 : 'bg-slate-900 hover:bg-indigo-600'
@@ -173,6 +168,61 @@ export default function Store() {
           </>
         )}
       </div>
+        
+    {/* FOOTER / SUPPORT SECTION */}
+    <footer className="bg-slate-900 text-white mt-12 py-16">
+        <div className="mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-3 gap-10">
+            {/* Column 1: Branding */}
+            <div>
+                <div className="font-bold text-xl tracking-tighter text-white">
+                    THE<span className="text-indigo-400"> TECH SHOP</span>
+                </div>
+                <p className="mt-4 text-sm text-slate-400">
+                    Your reliable source for performance-driven electronics.
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                    &copy; {new Date().getFullYear()} The Tech Shop. All rights reserved.
+                </p>
+            </div>
+
+            {/* Column 2: Quick Links (Placeholder for other pages) */}
+            <div>
+                <h4 className="font-semibold text-lg mb-4 text-indigo-400">Quick Links</h4>
+                <ul className="space-y-2 text-sm text-slate-300">
+                    <li><Link href="/about" className="hover:text-white transition">About Us</Link></li>
+                    <li><Link href="/policy" className="hover:text-white transition">Shipping Policy</Link></li>
+                    <li><Link href="/returns" className="hover:text-white transition">Returns & Exchanges</Link></li>
+                </ul>
+            </div>
+
+            {/* Column 3: Contact & Support */}
+            <div>
+                <h4 className="font-semibold text-lg mb-4 text-indigo-400">Support & Contact</h4>
+                <div className="space-y-3 text-sm">
+                    {/* Support Email */}
+                    <div className="flex items-center gap-3">
+                        <Mail size={20} className="text-indigo-400"/>
+                        <a 
+                            href="mailto:thetechshopgh@gmail.com" 
+                            className="text-slate-300 hover:text-white transition font-medium"
+                        >
+                            thetechshopgh@gmail.com
+                        </a>
+                    </div>
+                    
+                    {/* Placeholder Phone Number */}
+                    <div className="flex items-center gap-3">
+                        <Phone size={20} className="text-indigo-400"/>
+                        <p className="text-slate-300">+233 55 555 5555</p>
+                    </div>
+                    
+                    <p className="text-slate-400 pt-2">
+                        Reach out to us for technical support or order inquiries.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
     </div>
   )
 }
