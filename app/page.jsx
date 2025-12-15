@@ -1,4 +1,4 @@
-// app/page.jsx (FINAL CODE with Line-Clamp Alignment Fix)
+// app/page.jsx (FINAL CODE - Addressing Void and Button Text/Alignment)
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -7,7 +7,7 @@ import { ShoppingBag, Loader2, Search, XCircle, Zap, Mail, Phone } from 'lucide-
 import Image from 'next/image'
 import Link from 'next/link' 
 import { useCart } from '@/components/CartContext';
-// NOTE: CartDisplay is imported but NOT rendered here, as this file is the store page.
+// CartDisplay import remains, but is not rendered in this file.
 
 export default function Store() {
   const [products, setProducts] = useState([])
@@ -127,8 +127,7 @@ export default function Store() {
                     )}
                   </div>
 
-                  {/* Content */}
-                    {/* flex-1 ensures this section takes all remaining height */}
+                  {/* Content - MUST be flex-1 to push the price row down */}
                   <div className="flex flex-1 flex-col p-6">
                     {/* Link to Product Page */}
                         {/* Disable link if sold out */}
@@ -146,7 +145,7 @@ export default function Store() {
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
                       
-                        {/* ACTION BUTTON - Text fixed by conditional logic */}
+                        {/* ACTION BUTTON - Button text and size confirmed */}
                       <button 
                         onClick={() => !isSoldOut && addToCart(product)} 
                         disabled={isSoldOut}
@@ -156,7 +155,7 @@ export default function Store() {
                                 : 'bg-slate-900 hover:bg-indigo-600' 
                             }`}
                       >
-                        {/* Button Content Logic */}
+                        {/* Button Content Logic - Ensures full "Add to Cart" text is present */}
                         {isSoldOut ? (
                             <>
                                 <XCircle size={16} /> Sold Out
