@@ -69,6 +69,7 @@ export default function Store() {
             Hand-picked devices engineered for performance and reliability.
           </p>
         </div>
+        
       </div>
 
       {/* Grid */}
@@ -134,16 +135,17 @@ export default function Store() {
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600">{product.name}</h3>
                     </Link>
                     
-                    <p className="mt-2 flex-1 text-sm text-slate-500">{product.description}</p>
+                    {/* FIX: Added min-h-[40px] to description to align bottom row */}
+                    <p className="mt-2 flex-1 text-sm text-slate-500 min-h-[40px]">{product.description}</p>
                     
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price.toFixed(2)}</span>
                       
-                        {/* ACTION BUTTON (Standardized Size) */}
+                        {/* ACTION BUTTON (Moderately Sized - Removed fixed width, increased padding) */}
                       <button 
                         onClick={() => !isSoldOut && addToCart(product)} 
                         disabled={isSoldOut}
-                        className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors h-[42px] w-[140px] 
+                        className={`flex items-center justify-center gap-2 rounded-full px-6 py-2 text-sm font-semibold text-white transition-colors h-[42px] w-auto 
                             ${isSoldOut 
                                 ? 'bg-red-500 cursor-not-allowed'
                                 : 'bg-slate-900 hover:bg-indigo-600'
