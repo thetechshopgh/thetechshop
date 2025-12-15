@@ -1,4 +1,4 @@
-// app/page.jsx (FINAL CODE with Guaranteed Alignment Fix)
+// app/page.jsx (FINAL CODE with Line-Clamp Alignment Fix)
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -7,7 +7,7 @@ import { ShoppingBag, Loader2, Search, XCircle, Zap, Mail, Phone } from 'lucide-
 import Image from 'next/image'
 import Link from 'next/link' 
 import { useCart } from '@/components/CartContext';
-import CartDisplay from '@/components/CartDisplay';
+// NOTE: CartDisplay is imported but NOT rendered here, as this file is the store page.
 
 export default function Store() {
   const [products, setProducts] = useState([])
@@ -128,7 +128,7 @@ export default function Store() {
                   </div>
 
                   {/* Content */}
-                    {/* The flex-col here ensures the price row is pushed to the bottom */}
+                    {/* flex-1 ensures this section takes all remaining height */}
                   <div className="flex flex-1 flex-col p-6">
                     {/* Link to Product Page */}
                         {/* Disable link if sold out */}
@@ -136,16 +136,17 @@ export default function Store() {
                             href={isSoldOut ? '#' : `/products/${product.id}`} 
                             className={`${isSoldOut ? 'cursor-default' : 'hover:text-indigo-600'} transition duration-300`}
                         >
-                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600">{product.name}</h3>
+                      {/* Enforce 1 line on the name to save vertical space and guarantee alignment */}
+                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 truncate line-clamp-1">{product.name}</h3>
                     </Link>
                     
-                    {/* 🛑 FINAL FIX: Increased fixed height to h-20 (80px) to guarantee alignment for longer descriptions */}
-                    <p className="mt-2 text-sm text-slate-500 h-20 overflow-hidden">{product.description}</p>
+                    {/* 🛑 CRITICAL ALIGNMENT FIX: Use h-20 AND line-clamp-4 for absolute height consistency */}
+                    <p className="mt-2 text-sm text-slate-500 h-20 overflow-hidden line-clamp-4">{product.description}</p>
                     
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
                       
-                        {/* ACTION BUTTON - Fixed width and height maintained */}
+                        {/* ACTION BUTTON - Text fixed by conditional logic */}
                       <button 
                         onClick={() => !isSoldOut && addToCart(product)} 
                         disabled={isSoldOut}
@@ -155,6 +156,7 @@ export default function Store() {
                                 : 'bg-slate-900 hover:bg-indigo-600' 
                             }`}
                       >
+                        {/* Button Content Logic */}
                         {isSoldOut ? (
                             <>
                                 <XCircle size={16} /> Sold Out
