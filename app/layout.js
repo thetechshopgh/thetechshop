@@ -10,6 +10,12 @@ export const metadata = {
   },
   description:
     'The Tech Shop is your trusted hub for affordable laptops, phones, and electronic gadgets in Ghana.',
+
+  cons: {
+    icon: '/favicon.ico', // Standard favicon (place in /app directory)
+    shortcut: '/favicon-16x16.png', // Shortcut icon (optional, place in /public)
+    apple: '/apple-touch-icon.png', // Apple touch icon (optional, place in /public)
+  }
   
   keywords: [
     'electronics shop',
@@ -43,11 +49,6 @@ export const metadata = {
     description:
       'Your trusted hub for laptops, phones, and electronic gadgets.',
     images: ['/og-image.png'],
-  },
-
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-icon.png',
   },
 };
 
