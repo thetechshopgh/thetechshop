@@ -3,11 +3,54 @@ import './globals.css';
 import { CartProvider } from '../components/CartContext';
 import CartDisplay from '../components/CartDisplay'; // 🚨 NEW IMPORT
 
-// Metadata is optional but good practice
 export const metadata = {
-  title: 'The Tech Shop',
-  description: 'The best place to get all your tech gadgets.',
+  title: {
+    default: 'The Tech Shop | Affordable Electronics & Gadgets',
+    template: '%s | The Tech Shop',
+  },
+  description:
+    'The Tech Shop is your trusted hub for affordable laptops, phones, and electronic gadgets in Ghana.',
+  
+  keywords: [
+    'electronics shop',
+    'buy laptops Ghana',
+    'tech gadgets',
+    'phones and accessories',
+    'The Tech Shop',
+  ],
+
+  openGraph: {
+    title: 'The Tech Shop | Affordable Electronics & Gadgets',
+    description:
+      'Shop laptops, phones, and quality electronic gadgets at the best prices.',
+    url: 'https://thetechshop.vercel.app',
+    siteName: 'The Tech Shop',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'The Tech Shop – Electronics & Gadgets',
+      },
+    ],
+    locale: 'en_GB',
+    type: 'website',
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: 'The Tech Shop | Affordable Electronics & Gadgets',
+    description:
+      'Your trusted hub for laptops, phones, and electronic gadgets.',
+    images: ['/og-image.png'],
+  },
+
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
 };
+
 
 export default function RootLayout({ children }) {
   return (
