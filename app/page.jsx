@@ -1,4 +1,4 @@
-// app/page.jsx (Final Fixes for Sizing and Alignment)
+// app/page.jsx (Final Code)
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -138,9 +138,8 @@ export default function Store() {
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600">{product.name}</h3>
                     </Link>
                     
-                    {/* 🛑 FIX: Changed from min-h-[60px] to a fixed height h-16 (64px) for perfect alignment */}
-                    {/* H-16 reliably handles 3 lines of text and forces the price row to align */}
-                    <p className="mt-2 flex-1 text-sm text-slate-500 h-16 overflow-hidden">{product.description}</p>
+                    {/* 🛑 FIX: Fixed height h-16 (64px) for perfect vertical alignment */}
+                    <p className="mt-2 text-sm text-slate-500 h-16 overflow-hidden">{product.description}</p>
                     
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
@@ -164,6 +163,7 @@ export default function Store() {
                                 <ShoppingBag size={16} /> Add to Cart
                             </>
                         )}
+                      </button>
                     </div>
                   </div>
                 </motion.div>
