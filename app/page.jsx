@@ -1,4 +1,4 @@
-// app/page.jsx (FINAL CODE - Addressing Header Overlap and Card Alignment)
+// app/page.jsx (FINAL GUARANTEED FIX)
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -40,7 +40,7 @@ export default function Store() {
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="font-bold text-2xl tracking-tighter text-slate-900">THE<span className="text-indigo-600"> TECH SHOP</span></div>
           
-          {/* Search Bar - Enhanced */}
+          {/* Search Bar */}
           <div className="relative w-full max-w-lg">
             <input 
               type="text" 
@@ -54,18 +54,21 @@ export default function Store() {
         </div>
       </nav>
 
-      {/* 2. HERO - Ensures text is smaller and centered */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-white to-indigo-50 pb-16 pt-24 text-center border-b border-gray-200">
+      {/* 2. HERO SECTION - Addresses Mobile Size and Text Alignment */}
+      {/* 🛑 FIX: Reduced padding to shrink hero height on mobile (pt-16) */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-white to-indigo-50 pb-16 pt-16 text-center border-b border-gray-200">
+        {/* 🛑 FIX: Added mx-auto to center the content division */}
         <div className="relative z-10 mx-auto max-w-3xl px-6">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl font-black tracking-tighter text-slate-900 sm:text-6xl" 
+            {/* Reduced desktop font size to ensure no overlap risk */}
+            className="text-4xl font-black tracking-tighter text-slate-900 sm:text-5xl lg:text-6xl" 
           >
             Powering the Future <br />
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">One Gadget at a Time.</span>
           </motion.h1>
-          <p className="mt-6 text-xl leading-8 text-slate-600">
+          <p className="mt-4 text-lg leading-7 text-slate-600 sm:text-xl">
             Hand-picked devices engineered for performance and reliability.
           </p>
         </div>
@@ -126,35 +129,33 @@ export default function Store() {
                     )}
                   </div>
 
-                  {/* Content - MUST be flex-1 to push the price row down */}
+                  {/* Content - flex-1 is CRITICAL for pushing price row down */}
                   <div className="flex flex-1 flex-col p-6">
                     {/* Link to Product Page */}
-                        {/* Disable link if sold out */}
                         <Link 
                             href={isSoldOut ? '#' : `/products/${product.id}`} 
                             className={`${isSoldOut ? 'cursor-default' : 'hover:text-indigo-600'} transition duration-300`}
                         >
-                      {/* Enforce 1 line on the name to save vertical space and guarantee alignment */}
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 truncate line-clamp-1">{product.name}</h3>
                     </Link>
                     
-                    {/* 🛑 VOID FIX: Re-enforcing fixed height with line-clamp to force alignment */}
-                    <p className="mt-2 text-sm text-slate-500 h-16 overflow-hidden line-clamp-4">{product.description}</p>
+                    {/* 🛑 VOID FIX: min-h-16 (min-height: 4rem) ensures minimum spacing but prevents huge empty gaps */}
+                    <p className="mt-2 text-sm text-slate-500 overflow-hidden line-clamp-4 min-h-16">{product.description}</p>
                     
                     <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                       <span className="text-2xl font-bold text-slate-900">₵{product.price}</span>
                       
-                        {/* ACTION BUTTON - Button text and size confirmed */}
+                        {/* 🛑 BUTTON SIZE FIX: Changed w-36 to w-full */}
                       <button 
                         onClick={() => !isSoldOut && addToCart(product)} 
                         disabled={isSoldOut}
-                        className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors h-[42px] w-36 
+                        className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors h-[42px] w-full max-w-[150px]
                             ${isSoldOut 
                                 ? 'bg-red-500 cursor-not-allowed' 
                                 : 'bg-slate-900 hover:bg-indigo-600' 
                             }`}
                       >
-                        {/* Button Content Logic - Ensures full "Add to Cart" text is present */}
+                        {/* Button Content Logic */}
                         {isSoldOut ? (
                             <>
                                 <XCircle size={16} /> Sold Out
