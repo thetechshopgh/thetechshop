@@ -4,7 +4,7 @@ import { CartProvider } from '../components/CartContext';
 import CartDisplay from '../components/CartDisplay'; // 🚨 NEW IMPORT
 
 export const metadata = {
-  metadataBase: new URL('https://thetechshop.vercel.app'),
+  metadataBase: new URL('https://techycity.vercel.app'),
 
   title: {
     default: 'TechyCity | Cheap Laptops & Gadgets in Ghana',
@@ -34,7 +34,7 @@ export const metadata = {
     title: 'TechyCity | Cheap Laptops & Gadgets in Ghana',
     description:
       'Buy affordable laptops for students and professionals in Ghana at TechyCity.',
-    url: 'https://thetechshop.vercel.app',
+    url: 'https://techycity.vercel.app',
     siteName: 'TechyCity',
     images: [
       {
@@ -57,7 +57,7 @@ export const metadata = {
   },
 
   alternates: {
-    canonical: 'https://thetechshop.vercel.app',
+    canonical: 'https://techycity.vercel.app',
   },
 };
 
