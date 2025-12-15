@@ -15,7 +15,7 @@ export const metadata = {
     icon: '/favicon.ico', // Standard favicon (place in /app directory)
     shortcut: '/favicon-16x16.png', // Shortcut icon (optional, place in /public)
     apple: '/apple-touch-icon.png', // Apple touch icon (optional, place in /public)
-  }
+  },
   
   keywords: [
     'electronics shop',
