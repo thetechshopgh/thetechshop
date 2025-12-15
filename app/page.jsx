@@ -8,6 +8,29 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/components/CartContext'
 
+function ProductSkeleton() {
+  return (
+    <div className="group relative flex flex-col overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-200 animate-pulse">
+      
+      {/* Image */}
+      <div className="aspect-square w-full bg-gray-200" />
+
+      {/* Content */}
+      <div className="flex flex-1 flex-col p-6">
+        <div className="h-5 w-3/4 rounded bg-gray-200" />
+        <div className="mt-3 h-4 w-full rounded bg-gray-200" />
+        <div className="mt-2 h-4 w-5/6 rounded bg-gray-200" />
+
+        <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
+          <div className="h-6 w-20 rounded bg-gray-200" />
+          <div className="h-[42px] w-[120px] rounded-full bg-gray-200" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 export default function Store() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -78,11 +101,13 @@ export default function Store() {
 
       {/* PRODUCT GRID */}
       <div className="mx-auto max-w-7xl px-6 pt-10 pb-16 sm:pt-14">
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="animate-spin text-indigo-600" size={40} />
-          </div>
-        ) : (
+      {loading ? (
+  <div className="grid grid-cols-1 gap-y-12 gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
+    {Array.from({ length: 6 }).map((_, i) => (
+      <ProductSkeleton key={i} />
+    ))}
+  </div>
+) : (
           <>
             {filteredProducts.length === 0 && (
               <div className="text-center py-20 text-gray-500">
