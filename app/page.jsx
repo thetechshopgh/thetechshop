@@ -128,8 +128,8 @@ export default function Store() {
       '@context': 'https://schema.org',
       '@type': 'Store',
       name: 'The Tech Shop',
-      url: 'https://thetechshop.vercel.app',
-      image: 'https://thetechshop.vercel.app/og-image.png',
+      url: 'https://techycity.vercel.app',
+      image: 'https://techycity.vercel.app/og-image.png',
       description:
         'Affordable laptops and electronics for students and professionals in Ghana.',
       address: {
