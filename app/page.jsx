@@ -121,7 +121,26 @@ export default function Store() {
   </p>
 </section>
 
-      
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Store',
+      name: 'The Tech Shop',
+      url: 'https://thetechshop.vercel.app',
+      image: 'https://thetechshop.vercel.app/og-image.png',
+      description:
+        'Affordable laptops and electronics for students and professionals in Ghana.',
+      address: {
+        '@type': 'PostalAddress',
+        addressCountry: 'GH',
+      },
+      priceRange: '₵₵',
+    }),
+  }}
+/>
+ 
       {/* PRODUCT GRID */}
       <div className="mx-auto max-w-7xl px-6 pt-10 pb-16 sm:pt-14">
       {loading ? (
