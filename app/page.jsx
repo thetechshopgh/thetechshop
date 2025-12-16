@@ -105,6 +105,23 @@ export default function Store() {
         </div>
       </div>
 
+<section className="sr-only">
+  <h1>Cheap Laptops in Ghana for University Students</h1>
+  <p>
+    The Tech Shop provides affordable laptops for university students in Ghana,
+    including Accra, Kumasi, and Takoradi. We specialize in budget-friendly
+    laptops suitable for school, office work, programming, and design.
+  </p>
+
+  <h2>Laptops for University Students in Ghana</h2>
+  <p>
+    Our laptops are ideal for students studying computer science, business,
+    engineering, and general studies. We offer reliable brands at affordable
+    prices.
+  </p>
+</section>
+
+      
       {/* PRODUCT GRID */}
       <div className="mx-auto max-w-7xl px-6 pt-10 pb-16 sm:pt-14">
       {loading ? (
