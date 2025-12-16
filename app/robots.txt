@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://thetechshop.vercel.app/sitemap.xml
+Sitemap: https://techycity.vercel.app/sitemap.xml
