@@ -1,8 +1,0 @@
-export default function sitemap() {
-  return [
-    {
-      url: 'https://techycity.vercel.app',
-      lastModified: new Date(),
-    },
-  ];
-}
