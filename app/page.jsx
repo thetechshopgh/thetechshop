@@ -140,8 +140,6 @@ export default function Store() {
     }),
   }}
 />
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1441971718690211"
-     crossorigin="anonymous"></script>
  
       {/* PRODUCT GRID */}
       <div className="mx-auto max-w-7xl px-6 pt-10 pb-16 sm:pt-14">
