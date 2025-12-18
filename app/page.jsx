@@ -1,26 +1,21 @@
-// app/page.jsx (FINAL – CLEAN, COMPACT, FIXED)
 'use client'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react' // Added React for Fragment
 import { supabase } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import { ShoppingBag, Loader2, Search, XCircle, Zap, Mail, Phone } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import Script from 'next/script' // Added for AdSense
 import { useCart } from '@/components/CartContext'
 
 function ProductSkeleton() {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-200 animate-pulse">
-      
-      {/* Image */}
       <div className="aspect-square w-full bg-gray-200" />
-
-      {/* Content */}
       <div className="flex flex-1 flex-col p-6">
         <div className="h-5 w-3/4 rounded bg-gray-200" />
         <div className="mt-3 h-4 w-full rounded bg-gray-200" />
         <div className="mt-2 h-4 w-5/6 rounded bg-gray-200" />
-
         <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
           <div className="h-6 w-20 rounded bg-gray-200" />
           <div className="h-[42px] w-[120px] rounded-full bg-gray-200" />
@@ -30,6 +25,22 @@ function ProductSkeleton() {
   )
 }
 
+// Minimal Ad component to avoid crashing the loop
+const AdUnit = () => {
+  useEffect(() => {
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+  }, []);
+  return (
+    <div className="col-span-full w-full py-4 flex justify-center">
+      <ins className="adsbygoogle"
+           style={{ display: 'block' }}
+           data-ad-client="ca-pub-1441971718690211"
+           data-ad-slot="REPLACE_WITH_YOUR_ID"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
+  );
+};
 
 export default function Store() {
   const [products, setProducts] = useState([])
@@ -58,18 +69,19 @@ export default function Store() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD]">
+      <Script 
+        async 
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1441971718690211" 
+        crossOrigin="anonymous" 
+        strategy="afterInteractive" 
+      />
 
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-sm">
-        {/* Main container for the navbar content */}
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-           
-           {/* Logo / Branding */}
            <div className="font-bold text-2xl tracking-tighter text-slate-900">
              TECHY<span className="text-indigo-600">CITY</span>
            </div>
-          
-          {/* Search Bar - This was misplaced outside the main container */}
           <div className="relative w-full max-w-lg">
             <input
               type="text"
@@ -81,10 +93,9 @@ export default function Store() {
             /> 
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           </div>
-          
         </div> 
       </nav>
-      {/* End of NAVBAR */}
+
       {/* HERO */}
       <div className="relative overflow-hidden bg-gradient-to-br from-white to-indigo-50
                       pt-10 pb-12 sm:pt-14 sm:pb-16 text-center border-b border-gray-200">
@@ -112,7 +123,6 @@ export default function Store() {
     including Accra, Kumasi, and Takoradi. We specialize in budget-friendly
     laptops suitable for school, office work, programming, and design.
   </p>
-
   <h2>Laptops for University Students in Ghana</h2>
   <p>
     Our laptops are ideal for students studying computer science, business,
@@ -140,7 +150,7 @@ export default function Store() {
     }),
   }}
 />
- 
+
       {/* PRODUCT GRID */}
       <div className="mx-auto max-w-7xl px-6 pt-10 pb-16 sm:pt-14">
       {loading ? (
@@ -168,86 +178,82 @@ export default function Store() {
                   product.inventory > 0
 
                 return (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    className={`group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-gray-200
-                      hover:shadow-xl hover:ring-indigo-200 transition
-                      ${isSoldOut ? 'opacity-60 grayscale' : ''}`}
-                  >
-
-                    {/* IMAGE */}
-                    <div className="relative aspect-square w-full overflow-hidden bg-gray-100 p-3">
-                      {isSoldOut && (
-                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 text-white text-2xl font-black tracking-widest">
-                          SOLD OUT
-                        </div>
-                      )}
-
-                      {isLowStock && (
-                        <div className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-bold text-slate-900 shadow">
-                          <Zap size={14} /> Low Stock
-                        </div>
-                      )}
-
-                      {product.image_url ? (
-                        <Image
-                          src={product.image_url}
-                          alt={product.name}
-                          fill
-                          className="object-contain transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-gray-400">
-                          No Image
-                        </div>
-                      )}
-                    </div>
-
-                    {/* CONTENT */}
-                    <div className="flex flex-1 flex-col p-4">
-                      <Link
-                        href={isSoldOut ? '#' : `/products/${product.id}`}
-                        className={`${isSoldOut ? 'cursor-default' : 'hover:text-indigo-600'} transition`}
-                      >
-                        <h3 className="text-lg font-bold text-slate-900 line-clamp-1">
-                          {product.name}
-                        </h3>
-                      </Link>
-
-                      <p className="mt-2 text-sm text-slate-500 line-clamp-3">
-                        {product.description}
-                      </p>
-
-                      <div className="mt-5 flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
-                        <span className="text-xl font-bold text-slate-900">
-                          ₵{product.price}
-                        </span>
-
-                        <button
-                          onClick={() => !isSoldOut && addToCart(product)}
-                          disabled={isSoldOut}
-                          className={`flex items-center justify-center gap-2 rounded-full px-4 py-2
-                            text-sm font-semibold text-white h-10 min-w-[120px] transition
-                            ${isSoldOut
-                              ? 'bg-red-500 cursor-not-allowed'
-                              : 'bg-slate-900 hover:bg-indigo-600'}`}
-                        >
-                          {isSoldOut ? (
-                            <>
-                              <XCircle size={16} /> Sold Out
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingBag size={16} /> Add to Cart
-                            </>
-                          )}
-                        </button>
+                  <React.Fragment key={product.id}>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                      className={`group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-gray-200
+                        hover:shadow-xl hover:ring-indigo-200 transition
+                        ${isSoldOut ? 'opacity-60 grayscale' : ''}`}
+                    >
+                      {/* IMAGE */}
+                      <div className="relative aspect-square w-full overflow-hidden bg-gray-100 p-3">
+                        {isSoldOut && (
+                          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 text-white text-2xl font-black tracking-widest">
+                            SOLD OUT
+                          </div>
+                        )}
+                        {isLowStock && (
+                          <div className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-yellow-500 px-3 py-1 text-xs font-bold text-slate-900 shadow">
+                            <Zap size={14} /> Low Stock
+                          </div>
+                        )}
+                        {product.image_url ? (
+                          <Image
+                            src={product.image_url}
+                            alt={product.name}
+                            fill
+                            className="object-contain transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-gray-400">
+                            No Image
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </motion.div>
+
+                      {/* CONTENT */}
+                      <div className="flex flex-1 flex-col p-4">
+                        <Link
+                          href={isSoldOut ? '#' : `/products/${product.id}`}
+                          className={`${isSoldOut ? 'cursor-default' : 'hover:text-indigo-600'} transition`}
+                        >
+                          <h3 className="text-lg font-bold text-slate-900 line-clamp-1">
+                            {product.name}
+                          </h3>
+                        </Link>
+                        <p className="mt-2 text-sm text-slate-500 line-clamp-3">
+                          {product.description}
+                        </p>
+                        <div className="mt-5 flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                          <span className="text-xl font-bold text-slate-900">
+                            ₵{product.price}
+                          </span>
+                          <button
+                            onClick={() => !isSoldOut && addToCart(product)}
+                            disabled={isSoldOut}
+                            className={`flex items-center justify-center gap-2 rounded-full px-4 py-2
+                              text-sm font-semibold text-white h-10 min-w-[120px] transition
+                              ${isSoldOut
+                                ? 'bg-red-500 cursor-not-allowed'
+                                : 'bg-slate-900 hover:bg-indigo-600'}`}
+                          >
+                            {isSoldOut ? (
+                              <>
+                                <XCircle size={16} /> Sold Out
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag size={16} /> Add to Cart
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                    {(i + 1) % 6 === 0 && <AdUnit />}
+                  </React.Fragment>
                 )
               })}
             </div>
@@ -258,7 +264,6 @@ export default function Store() {
       {/* FOOTER */}
       <footer className="bg-slate-900 text-white mt-12 py-16">
         <div className="mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-3 gap-10">
-
           <div>
             <div className="font-bold text-xl tracking-tighter">
               TECHY<span className="text-indigo-400"> CITY</span>
@@ -270,7 +275,6 @@ export default function Store() {
               &copy; {new Date().getFullYear()} The Tech Shop. All rights reserved.
             </p>
           </div>
-
           <div>
             <h4 className="font-semibold text-lg mb-4 text-indigo-400">Quick Links</h4>
             <ul className="space-y-2 text-sm text-slate-300">
@@ -279,7 +283,6 @@ export default function Store() {
               <li><Link href="/returns" className="hover:text-white">Returns & Exchanges</Link></li>
             </ul>
           </div>
-
           <div>
             <h4 className="font-semibold text-lg mb-4 text-indigo-400">Support & Contact</h4>
             <div className="space-y-3 text-sm">
@@ -289,18 +292,15 @@ export default function Store() {
                   thetechshopgh@gmail.com
                 </a>
               </div>
-
               <div className="flex items-center gap-3">
                 <Phone size={20} className="text-indigo-400" />
                 <p>+233 55 555 5555</p>
               </div>
-
               <p className="text-slate-400 pt-2">
                 Reach out to us for technical support or order inquiries.
               </p>
             </div>
           </div>
-
         </div>
       </footer>
     </div>
