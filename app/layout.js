@@ -64,6 +64,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+    <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1441971718690211"
+          crossOrigin="anonymous"
+          strategy="afterInteractive" // Loads after the page is interactive
+        />
       <body>
         <CartProvider>
 
